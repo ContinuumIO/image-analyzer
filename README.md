@@ -1,23 +1,21 @@
-# image-analyzer
-# Example output from on_each_image:
-
-# Steps in Analysis on Each Image
+## image-analyzer
+### Steps in Analysis on Each Image
 * Standardize image (resizing, removal of alpha channel for now)
 * Percentiles of colors in standardized image.  
 * Kmeans standardized image. Output the image's centroids.
 * Perceptive hash of standardized image.  Encoded as hex and in chunks.
 * PCA factors and variance.
 
-# On my Mac, each image takes about .2 (mean) +/- .3 (stdev) seconds to process (skewed right).
+### On my Mac, each image takes about .2 (mean) +/- .3 (stdev) seconds to process (skewed right).
 
-# TODO on each image analysis 
+### TODO on each image analysis 
 * Experiment with numba for the patch statistics 
 * Standardize images better (padding is not done)
 * Determine best histogram array sizes and other output sizes
 * Determine chunk size resolution for perceptive hash
 * Currently keeping the top 3 kmeans clusters of each image (change?)
 
-# Pipeline
+### Pipeline
 * Map the images from spark/hdfs to on_each_image function
 * Output as example below to a table so that the outer machine learning algorithm can revisit image results without recalculating them.
 * Use spark mllib to do kmeans, perhaps separately for these groups of data:
@@ -25,7 +23,7 @@
 2. Using the top 3 centroid kmeans colors of each image (the image's kmeans)
 3. Using PCA factors and variance from each image
 
-# Example output for each image
+### Example output for each image
 <code>
 {'cen_3': array([ 0.82521313,  0.85179961,  0.83754307]),
  'histo': array([[ 0.30574449,  0.48011642,  0.6848652 ,  0.99852941,  1.        ],
