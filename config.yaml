@@ -1,0 +1,65 @@
+# where to put example images in hdfs
+example_data: /imgs/
+# the wildcard input that specifies where to get hdfs images
+input_spec: /imgs/*
+# a name of a set of kmeans and on_each_image measurements
+test_name: t1
+# actions: list that may include some or all of 
+#     [download, on_each_image, kmeans, find_similar]
+actions: [download, on_each_image, kmeans, find_similar]
+# For kmeans on one image, perceptive hash, and histogramming,
+# rescale the image to this x pixel count then maintain aspect ratio
+x_down: 256
+# For ward clustering on each image, downscale x pixel count
+# to this, then maintain aspect ratio.  (Ward clustering 
+# is significantly slower than the other analyses, so 
+# smaller size helps.)
+ward_x_down: 64
+# Perceptive hashes are hex strings in a list
+# phash_chunk_len sets the sub-list length to
+# find tokens with the perceptive hash list of hexes.
+phash_chunk_len: 2
+# The kmeans on the individual image is done on a sample
+# to save time.  This is the max number of pixels to 
+# include there.
+kmeans_sample: 1800
+# how many kmeans iterations on each individual image
+maxIterations: 5
+# how many kmeans clusters on each image's colors
+n_clusters: 7
+# how many clusters in the kmeans of all images together
+n_clusters_group: 5
+# how many kmeans iterations in the group  kmeans of all images
+max_iter_group: 3
+# convergence in group kmeans (pixel euclidean distance)
+kmeans_group_converge: 100 
+# quantiles to get of each color histogram 
+# quantiles are a list of 0 to 100 based arguments to np.percentile
+quantiles: [1, 2, 5, 15, 25, 50, 75, 85, 95, 98, 99]
+# the reducers do some unions and counting
+# of perceptive hash and ward label chunks
+# this sets the number of keys in total
+# that are held in memory that way.
+in_memory_set_len: 8000000
+
+# The following arguments pertain to
+# candidate images for which searches
+# against the spark tables are being done.
+
+# a name for a set of candidate images
+candidate_batch: c1
+# Where are the candidate images in hdfs
+# this is a wildcard file spec
+candidate_spec: /imgs/*
+# The search proceeds in rounds of 
+# searching networks of hashes.
+# How many potentially matching image
+# keys to keep on each round.
+search_sample_step: 1000
+# What network depth of hash searching
+search_rounds: 1
+
+
+
+
+

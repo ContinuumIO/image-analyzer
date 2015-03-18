@@ -9,20 +9,20 @@
 ### On my Mac, each image takes about .2 (mean) +/- .3 (stdev) seconds to process (skewed right).
 
 ### TODO on each image analysis 
-* Experiment with numba for the patch statistics 
+* Experiment with numba for patch statistics 
 * Standardize images better (padding is not done)
-* Determine best histogram array sizes and other output sizes
-* Determine chunk size resolution for perceptive hash
-* Currently keeping the top 3 kmeans clusters of each image (change?)
+* Add a job group to different parts of the process so they can be killed if needed
+* Add the scikit learn's agglomerative clustering feature recognition to on_each_image.py (hash those features)
+* Could the same on_each_image function be applied again to all photos but zooming in or as a tiny thumbnail?
+* When searching for matches of candidate images against db, save any ancillary information learned
 
 ### Pipeline
 * Map the images from spark/hdfs to on_each_image function
 * Output as example below to a table so that the outer machine learning algorithm can revisit image results without recalculating them.
-* Use spark mllib to do kmeans, perhaps separately for these groups of data:
-1. Using histogram of full data
-2. Using the top 3 centroid kmeans colors of each image (the image's kmeans)
-3. Using PCA factors and variance from each image
-
+* Do kmeans where the columns are the histogram and centroids of each image
+* Keep a bag of perceptive hash chunks within each cluster
+* Make inverse map tables like perceptive hash key to cluster id or hash to picture id
+* Extract covariance matrix in kmeans passes
 ### Example output for each image
 <code>
 {
