@@ -16,6 +16,7 @@ import requests
 import subprocess as sp
 import os
 from StringIO import StringIO
+from fuzzify_training import fuzzify
 utmp = "/tmp/hdfs_tmp/"
 os.chdir(utmp)
 TEST_DATA = 'http://vasc.ri.cmu.edu/idb/images/face/frontal_images/images.tar'
@@ -36,8 +37,7 @@ def download_zipped_faces(config, url=TEST_DATA, fname=images_test):
 	subdirs = ["newtest",  "rotated",  "test",  "test-low"]
 	for h in subdirs:
 		for f in os.listdir(os.path.join(utmp, h)):
-			f2 =  os.path.join(utmp,h,f)
-			print(f2)
-			sp.Popen(['hadoop', 'fs','-put',f2, os.path.join(config['example_data'], f)]).communicate()
-	
-
+			fname =  os.path.join(utmp,h,f)
+			sp.Popen(['hadoop', 'fs','-put',fname, os.path.join(config['example_data'], f)]).communicate()
+	        if config.get('fuzzy_example_data', False):
+                fuzzify(fname, config)

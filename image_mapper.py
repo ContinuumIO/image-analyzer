@@ -53,28 +53,64 @@ options_template  = {
     }
     
 
-def load_image(image):
+def standardize_image_meta(img):
+    m2 = {}
+    for hi_key, obj in ((i, getattr(img, i, {}).items()) for i in ('info', 'app')):
+        for k, v in obj :
+            m2['%s_%s' %(hi_key, k) ] = v
+    m2['format'] = getattr(img, 'format', '')
+    m2['format_description'] = getattr(img, 'format_description', '')
+    return m2
+
+def load_image(quadrants, image):
     """Load one image, where image = (key, blob)"""
     from StringIO import StringIO
     from PIL import Image
+    img_quads = []
     img = Image.open(StringIO(image[1]))
+    if quadrants:
+        bbox = img.getbbox()
+        bbox2 =list(bbox) 
+        temp_x = int((bbox[0] + bbox[2]) / 2.0)
+        bbox2[0] = temp_x
+        img_quads.append(img.crop(tuple(bbox2)))
+        temp_y = int((bbox[1] + bbox[3]) / 2.0)
+        bbox2[1] = temp_y
+        img_quads.append(img.crop(tuple(bbox2)))
+        bbox2[1] = bbox[1]
+        bbox2[2] = temp_x
+        bbox2[0] = bbox[0]
+        img_quads.append(img.crop(tuple(bbox2)))
+        bbox2[3] = temp_y
+        img_quads.append(img.crop(tuple(bbox2)))
+        img_quads = [np.asarray(i, dtype=np.uint8) for i in img_quads]
     image_object = np.asarray(img, dtype=np.uint8)
-    return  image_object.astype(np.int) 
+    meta = standardize_image_meta(img)
+    return  image_object, img_quads, meta
     
 
 def _map_on_each_image(image):
     """on_each_image with id given in metadata.
     Creates a dictionary with RESULT_KEYS for each image."""
-    return on_each_image(config, 
-                image_object=load_image(image), 
-                phash_offset=0, 
-                metadata={'id':image[0]})
+    img, quads, meta = load_image(config.get('quandrants'), image)
+    meta2 = copy.deepcopy(meta)
+    meta2['is_full'] = False
+    meta['is_full'] = True
+    out = []
+    for img, met in [(meta, img)] + [(meta2, q) for q in quads]:
+        on_im = on_each_image(config, 
+                    image_object=img, 
+                    phash_offset=0, 
+                    metadata={'id':image[0]})
+        on_im['meta'] = met 
+        out.append(on_im)
+    return out
 
 
 def map_on_each_image(input_spec, output_path):
     """Applies on_each_image to each function in input_spec, 
     typically a wildcard hdfs file pattern."""
-    img_out = sc.binaryFiles(input_spec).map(_map_on_each_image)
+    img_out = sc.binaryFiles(input_spec).flatMap(_map_on_each_image)
     img_out.saveAsPickleFile(output_path)
     return img_out
 

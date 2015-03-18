@@ -1,5 +1,9 @@
 # where to put example images in hdfs
 example_data: /imgs/
+# Also load a fuzzified version of the input examples for testing?
+# if so, put an hdfs top level dir here.
+# if not, put Null
+fuzzy_example_data: /fuzzy/
 # the wildcard input that specifies where to get hdfs images
 input_spec: /imgs/*
 # a name of a set of kmeans and on_each_image measurements
@@ -7,6 +11,10 @@ test_name: t1
 # actions: list that may include some or all of 
 #     [download, on_each_image, kmeans, find_similar]
 actions: [download, on_each_image, kmeans, find_similar]
+# Should the image analysis be larger to include
+# all the images' quadrants as separate mapped images 
+# (i.e. full image + 4 quandrants separately)  True/ False
+quadrants: True
 # For kmeans on one image, perceptive hash, and histogramming,
 # rescale the image to this x pixel count then maintain aspect ratio
 x_down: 256
@@ -50,7 +58,7 @@ in_memory_set_len: 8000000
 candidate_batch: c1
 # Where are the candidate images in hdfs
 # this is a wildcard file spec
-candidate_spec: /imgs/*
+candidate_spec: /fuzzy/*
 # The search proceeds in rounds of 
 # searching networks of hashes.
 # How many potentially matching image
