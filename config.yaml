@@ -10,7 +10,7 @@ input_spec: /imgs/*
 test_name: t1
 # actions: list that may include some or all of 
 #     [download, on_each_image, kmeans, find_similar]
-actions: [download, on_each_image, kmeans, find_similar]
+actions: [ find_similar]
 # Should the image analysis be larger to include
 # all the images' quadrants as separate mapped images 
 # (i.e. full image + 4 quandrants separately)  True/ False
@@ -37,8 +37,10 @@ maxIterations: 5
 n_clusters: 7
 # how many clusters in the kmeans of all images together
 n_clusters_group: 5
+# ward clusters per image
+ward_clusters: 12
 # how many kmeans iterations in the group  kmeans of all images
-max_iter_group: 3
+max_iter_group: 1
 # convergence in group kmeans (pixel euclidean distance)
 kmeans_group_converge: 100 
 # quantiles to get of each color histogram 
@@ -66,8 +68,8 @@ candidate_spec: /fuzzy/*
 search_sample_step: 1000
 # What network depth of hash searching
 search_rounds: 1
-
-
+# Have the candidate images already been through on_each_image?
+candidate_has_mapped: True
 
 
 

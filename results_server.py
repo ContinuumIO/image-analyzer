@@ -5,6 +5,10 @@ import tornado.web
 import sys
 import logging
 import json
+import os
+import yaml
+from pyspark import SparkConf
+from pyspark import SparkContext 
 from hdfs_paths import hdfs_path
 
 logger = logging.getLogger()
@@ -14,7 +18,7 @@ config = yaml.load(open(config_path))
 
 # set up Spark
 conf = SparkConf()
-conf.set('spark.executor.instances', 10)
+conf.set('spark.executor.instances', 1)
 sc = SparkContext('yarn-client', 'pyspark-demo', conf=conf)
 
 

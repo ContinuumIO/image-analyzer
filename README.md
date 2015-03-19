@@ -6,15 +6,20 @@
 * Perceptive hash of standardized image.  Encoded as hex and in chunks.
 * PCA factors and variance.
 
-### On my Mac, each image takes about .2 (mean) +/- .3 (stdev) seconds to process (skewed right).
+### Timing
+* On my Mac, each image takes about .2 (mean) +/- .3 (stdev) seconds to process (skewed right).
 
 ### TODO on each image analysis 
+* Speed up loading of images to hdfs ?
 * Experiment with numba for patch statistics 
 * Standardize images better (padding is not done)
 * Add a job group to different parts of the process so they can be killed if needed
 * Add the scikit learn's agglomerative clustering feature recognition to on_each_image.py (hash those features)
 * Could the same on_each_image function be applied again to all photos but zooming in or as a tiny thumbnail?
 * When searching for matches of candidate images against db, save any ancillary information learned
+* Clean up system of hdfs pathing so that it is more modular (specific paths can be added to searches, etc)
+* As part of that hdfs path clean up, also do some checks for required paths earlier on in algorithms
+* Analysis of image metadata is not done, but some of the PIL Image data are saved in dict.
 
 ### Pipeline
 * Map the images from spark/hdfs to on_each_image function

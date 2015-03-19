@@ -1,29 +1,29 @@
 from __future__ import division, print_function
 import subprocess as sp
-hdfs_template = 'hdfs:///%(test_name)s/%(test_part)s%(second_test_part)s/%(fname)s'
+import os
+hdfs_template = lambda a: 'hdfs://' + os.path.join(*a)
 
 def hdfs_path(*args):
     config = args[0]
-    if len(args) == 3:
-        test_part, fname = args[1:]
-        second_test_part = ''
+    if args[1].startswith('/'):
+        p = []
     else:
-        test_part,, second_test_part, fname = args[1:]
-    h = hdfs_template % {'test_part': test_part,
-                        'fname': fname,
-                        'second_test_part': second_test_part,
-                        'test_name':config['test_name']}
-    if not fname:
-        return h[:-1]
-    return h
-
+        p = [os.path.join('/', config['test_name']) ]
+    p.extend(args[1:])
+    p[-1] = os.path.basename(p[-1])
+    return  hdfs_template(p)
+    
     
 def make_hdfs_dirs(config):
-    paths = ['/' + config['test_name'],
-             '/%s/on_each_image' % config['test_name'],
-             '/%s/km' % config['test_name'],
-             '/%s/candidates' % config['test_name'],
-             '/%s/candidates/%s' % config['candidate_batch'],]
+    root = os.path.join('/',config['test_name'])
+    paths = [root,
+             '%s/on_each_image' % root,
+             '%s/km' % root,
+             '%s/candidates' % root,
+             '%s/candidates/%s' % (root, config['candidate_batch']),
+             ]
+    if config.get('fuzzy_example_data', False):
+        paths.append(config['fuzzy_example_data'])
     for p in paths:
         print(sp.Popen(['hadoop',
                         'fs',

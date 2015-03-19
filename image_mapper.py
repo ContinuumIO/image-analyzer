@@ -7,11 +7,12 @@ from StringIO import StringIO
 import yaml
 import numpy as np
 import os
+import operator 
 import sys
-from on_each_image import on_each_image
+from map_each_image import map_each_image
 import search
 from load_data import download_zipped_faces
-from hdfs_paths import hdfs_path, hdfs_template
+from hdfs_paths import hdfs_path, make_hdfs_dirs
 
 
 # load yaml config from this dir
@@ -33,9 +34,10 @@ RESULT_KEYS = ['cen',
              'phash']
 # Do addFile so remote workers have python code
 sc.addFile(os.path.join(os.path.dirname(__file__),'hdfs_paths.py'))
-sc.addFile(os.path.join(os.path.dirname(__file__),'on_each_image.py'))
+sc.addFile(os.path.join(os.path.dirname(__file__),'map_each_image.py'))
 sc.addFile(config_path)
 sc.addFile(os.path.join(os.path.dirname(__file__),'search.py'))
+sc.addFile(os.path.join(os.path.dirname(__file__),'fuzzify_training.py'))
 
 # These are options to the flat_map_indicators function
 # which can do these mappings.
@@ -45,6 +47,7 @@ options_template  = {
         'cluster_to_phash': False,
         'phash_to_cluster': False,
         'flattened_to_phash': False,
+        'cluster_to_flattened':False,
         'phash_to_flattened': False,
         'cluster_to_key': False,
         'key_to_cluster': False,
@@ -52,67 +55,6 @@ options_template  = {
         'ward_to_cluster': False,
     }
     
-
-def standardize_image_meta(img):
-    m2 = {}
-    for hi_key, obj in ((i, getattr(img, i, {}).items()) for i in ('info', 'app')):
-        for k, v in obj :
-            m2['%s_%s' %(hi_key, k) ] = v
-    m2['format'] = getattr(img, 'format', '')
-    m2['format_description'] = getattr(img, 'format_description', '')
-    return m2
-
-def load_image(quadrants, image):
-    """Load one image, where image = (key, blob)"""
-    from StringIO import StringIO
-    from PIL import Image
-    img_quads = []
-    img = Image.open(StringIO(image[1]))
-    if quadrants:
-        bbox = img.getbbox()
-        bbox2 =list(bbox) 
-        temp_x = int((bbox[0] + bbox[2]) / 2.0)
-        bbox2[0] = temp_x
-        img_quads.append(img.crop(tuple(bbox2)))
-        temp_y = int((bbox[1] + bbox[3]) / 2.0)
-        bbox2[1] = temp_y
-        img_quads.append(img.crop(tuple(bbox2)))
-        bbox2[1] = bbox[1]
-        bbox2[2] = temp_x
-        bbox2[0] = bbox[0]
-        img_quads.append(img.crop(tuple(bbox2)))
-        bbox2[3] = temp_y
-        img_quads.append(img.crop(tuple(bbox2)))
-        img_quads = [np.asarray(i, dtype=np.uint8) for i in img_quads]
-    image_object = np.asarray(img, dtype=np.uint8)
-    meta = standardize_image_meta(img)
-    return  image_object, img_quads, meta
-    
-
-def _map_on_each_image(image):
-    """on_each_image with id given in metadata.
-    Creates a dictionary with RESULT_KEYS for each image."""
-    img, quads, meta = load_image(config.get('quandrants'), image)
-    meta2 = copy.deepcopy(meta)
-    meta2['is_full'] = False
-    meta['is_full'] = True
-    out = []
-    for img, met in [(meta, img)] + [(meta2, q) for q in quads]:
-        on_im = on_each_image(config, 
-                    image_object=img, 
-                    phash_offset=0, 
-                    metadata={'id':image[0]})
-        on_im['meta'] = met 
-        out.append(on_im)
-    return out
-
-
-def map_on_each_image(input_spec, output_path):
-    """Applies on_each_image to each function in input_spec, 
-    typically a wildcard hdfs file pattern."""
-    img_out = sc.binaryFiles(input_spec).flatMap(_map_on_each_image)
-    img_out.saveAsPickleFile(output_path)
-    return img_out
 
 
 def phash_chunks(phash_chunk_len, phashes):
@@ -152,12 +94,14 @@ def flat_map_indicators(phash_chunk_len,
         items += [(flattened, k)]
     if options.get('cluster_to_key'):
         items += [(best_cluster, k)]
+    if options.get('cluster_to_flattened'):
+        items += [(best_cluster, flattened)]
     if options.get('key_to_cluster'):
         items += [(k, best_cluster)]
     if options.get('ward_to_cluster'):
         items += [(wa, best_cluster) for wa in wards]
     if options.get('ward_to_key'):
-        items ++ [(wa, k) for wa in wards]
+        items += [(wa, k) for wa in wards]
     return items
 
 
@@ -201,7 +145,7 @@ def km_map(kPoints, p):
     Emit a count dictionary of perceptive hashes"""
     closest_idx = closestPoint(p[1], kPoints)
     phash_counter= {phash: p[2].count(phash) for phash in p[2]}
-    ward_counter= {wa: p[3].count(phash) for wa in p[3]}
+    ward_counter= {wa: p[3].count(wa) for wa in p[3]}
     return (closest_idx, (p[1], 1, phash_counter, ward_counter))
 
 
@@ -229,7 +173,7 @@ def kmeans(config):
     within_set_sse = []
     while tempDist > convergeDist:
         max_len = config['in_memory_set_len']  / K
-        ward_max_len = int(.1 * max_len)
+        ward_max_len = int(.03 * max_len)
         phash_max_len = int(max_len - ward_max_len)
         closest = data.map(partial(km_map, kPoints))
         pointStats = closest.reduceByKey(partial(reduce_dist, 
@@ -237,28 +181,34 @@ def kmeans(config):
                                                 phash_max_len))
         pts_hash_union = pointStats.map(
                             lambda (x, (y, z, u, w)): (x, (y / z, u, w)
-                        )).collect()
-        tempDist = sum(np.sum((kPoints[x] - y) ** 2) for (x, (y, u, w)) in pts_hash_union)
-        phash_unions = tuple(u for (x, (y, u, w)) in pts_hash_union)
-        ward_unions = tuple(w for (x, (y, u, w)) in pts_hash_union)
-        newPoints = tuple((x, np.array(y, dtype="int32")) for (x, (y, u, w)) in pts_hash_union)
+                        ))
+        tempDist = pts_hash_union.map(
+                lambda (x, (y, u, w)): np.sum((kPoints[x] - y) ** 2)
+            ).sum()
+        newPoints = pts_hash_union.map(
+                lambda (x, (y, u, w)): (x, np.array(y, dtype="int32"))
+                ).collect()
         idx += 1
         if idx > config['max_iter_group']:
             break
         print('kmeans did iteration: ', idx, file=sys.stderr)
     for (x, y) in newPoints:
         kPoints[x] = y
-
+    phash_unions = pts_hash_union.map(
+                    lambda (x, (y, u, w)): u
+                )
+    phash_unions.saveAsPickleFile(hdfs_path(config, 'km', 'phash_unions'))
+    ward_unions =  pts_hash_union.map(
+                lambda (x, (y, u, w)): w
+            )
+    ward_unions.saveAsPickleFile(hdfs_path(config, 'km', 'ward_unions'))
     # The rest of the function deals with writing various lookup tables.
 
     # save the fit data and the meta stats as a single item in list
-    kpsave = sc.parallelize([{'kPoints': kPoints,
-                            'ss': tempDist,
-                            'iter': idx,
-                            'within_set_ss': within_set_sse,
-                            'phash_unions': phash_unions,
-                            'ward_unions': ward_unions,
-                            }])
+    kpsave = sc.parallelize([kPoints,
+                            tempDist,
+                            within_set_sse,
+                            ])
     kpsave.saveAsPickleFile(hdfs_path(config, 'km','cluster_center_meta'))
     
     # do several key value maps for lookups later
@@ -287,8 +237,18 @@ def kmeans(config):
     cluster_to_k = data.flatMap(lambda x:flat_map(*x))
     cluster_to_k.groupByKey()
     cluster_to_k.saveAsPickleFile(hdfs_path(config, 'km', 'cluster_to_key'))
+
+    # Now save the cluster idx to flattened histo and centroids of image
+    options['cluster_to_key'] = False
+    options['cluster_to_flattened'] = True
+    flat_map = partial(flat_map_temp, options)
+    cluster_to_k = data.flatMap(lambda x:flat_map(*x))
+    cluster_to_k.groupByKey()
+    cluster_to_k.saveAsPickleFile(hdfs_path(config, 'km', 'cluster_to_flattened'))
+
     
     # Image key to cluster map
+    options['cluster_to_flattened'] = False
     options['key_to_cluster'] = True
     flat_map = partial(flat_map_temp, options)
     key_to_cluster = data.flatMap(lambda x:flat_map(*x))
@@ -325,20 +285,21 @@ def kmeans(config):
     flat_map = partial(flat_map_temp, options)
     cluster_phash = data.flatMap(lambda x:flat_map(*x))
     cluster_phash.groupByKey()
-    cluster_phash.saveAsPickleFile(hdfs_path(config, 'km', 'ward_to_cluster'))
+    cluster_phash.saveAsPickleFile(hdfs_path(config, 'km', 'ward_to_key'))
         
 
 if __name__ == "__main__":
     actions = config['actions']
     config['candidate_measures_spec'] = hdfs_path(config, 
                                                 'candidates', 
-                                                'measures' + config['candidate_batch'] 
+                                                config['candidate_batch'] ,
+                                                'measures'
                                                 )
     make_hdfs_dirs(config)
     if 'download' in actions:
         download_zipped_faces(config)
     if  'on_each_image' in actions:
-        map_on_each_image(config['input_spec'], 
+        map_each_image(sc, config, config['input_spec'], 
                           hdfs_path(config, 'on_each_image', 'measures'))
     if  'kmeans' in actions:
         kmeans(config)

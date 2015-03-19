@@ -33,11 +33,14 @@ def download_zipped_faces(config, url=TEST_DATA, fname=images_test):
     with TarFile.open(fname) as tf:
     	tf.extractall()
 
-	sp.Popen(['hadoop','fs','-mkdir','/imgs/'])
-	subdirs = ["newtest",  "rotated",  "test",  "test-low"]
-	for h in subdirs:
-		for f in os.listdir(os.path.join(utmp, h)):
-			fname =  os.path.join(utmp,h,f)
-			sp.Popen(['hadoop', 'fs','-put',fname, os.path.join(config['example_data'], f)]).communicate()
-	        if config.get('fuzzy_example_data', False):
-                fuzzify(fname, config)
+	sp.Popen(['hadoop','fs','-mkdir', config['example_data']])
+	subdirs = ["newtest", ]# "rotated",  "test",  "test-low"]
+    for h in subdirs:
+        for f in os.listdir(os.path.join(utmp, h)):
+            fname =  os.path.join(utmp,h,f)
+            hdfs_name = "%s_%s"%(h,f)
+            sp.Popen(['hadoop', 'fs','-put',fname, 
+                    os.path.join(config['example_data'], hdfs_name)]).communicate()
+            if config.get('fuzzy_example_data', False):
+                fuzzify(config, fname, hdfs_name)
+
