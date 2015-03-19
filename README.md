@@ -5,7 +5,7 @@
 * Kmeans standardized image. Output the image's centroids.
 * Perceptive hash of standardized image.  Encoded as hex and in chunks.
 * PCA factors and variance.
-
+* Ward clustering, as described here: http://scikit-learn.org/stable/auto_examples/cluster/plot_lena_ward_segmentation.html
 ### Timing
 * On my Mac, each image takes about .2 (mean) +/- .3 (stdev) seconds to process (skewed right).
 
@@ -26,8 +26,45 @@
 * Output as example below to a table so that the outer machine learning algorithm can revisit image results without recalculating them.
 * Do kmeans where the columns are the histogram and centroids of each image
 * Keep a bag of perceptive hash chunks within each cluster
+* Keep a bag of ward cluster hashes
 * Make inverse map tables like perceptive hash key to cluster id or hash to picture id
 * Extract covariance matrix in kmeans passes
+
+### HDFS Directory structure
+* input_spec: where in hdfs are the training images, e.g. /imgs/*
+* Test directory is based on given test name, like t1:
+
+<code>
+  t1/
+    on_each_image/
+      measures
+    candidates/
+      c1/
+        measures
+      c2/
+        measures
+    km/
+      cluster_center_meta
+      phash_unions
+      ward_unions
+      cluster_to_flattened
+      cluster_to_key
+      cluster_to_phash
+      cluster_to_ward
+      flattened_to_cluster
+      flattened_to_key
+      flattened_to_phash
+      key_to_cluster
+      key_to_phash
+      phash_to_cluster
+      phash_to_flattened
+      phash_to_key
+      ward_to_cluster
+      ward_to_key
+
+</code>
+
+
 ### Example output for each image
 <code>
 {
@@ -35,26 +72,42 @@
         [ 0.33168199,  0.48903186,  0.69650735,  1.        ,  1.        ],
         [ 0.29589461,  0.45309436,  0.6689951 ,  0.99215686,  0.99215686]]),
         
- 'phash': ['0xfffe00000000fffe00000000fffe00000000ffff80200000ffff00000000',
-  '0x80000000fffe00000000fffe20000000fffe20000000fffe00000000fffe0001',
-  '0xfffe01000000ffff81000000ffff00000000fffe00000000fffe00000000ffff',
-  '0xffff20000000ffff80000000ffff80000000ffff80000000ffff80000000',
-  '0x80000000ffff00000000ffff00000000ffff00000000ffff08000000ffffa801',
-  '0xffffe0000000ffffa0000000ffff80000000ffff80000000ffff000000010000',
-  '0xffffc0000000ffffc4000000ffffc4000000ffffe0000000ffffe0000000',
-  '0xe05cc040fffff00ffa00ffffc0000400ffffe0000000ffffe4000000ffffe001',
-  '0xffffff3e57fffffffbfe07ffffffe0ffffffffffe00e77ffffffc00003f90000',
-  '0xe3ffffffffffc1fffffff1ffe0ffffffffff043fffffffff27c7fffffffe5800',
-  '0x1fffff5f83f803fffffce0f8f068fffffc3ffe1ff2ffffff3fcffaffffffff'],
-  
- 'cen_3': array([ 0.82521313,  0.85179961,  0.83754307]),
- 'cen_2': array([ 0.54972566,  0.54918236,  0.51381149]),
- 'cen_1': array([ 0.43394845,  0.45123864,  0.4188573 ]),
- 'cen_0': array([ 0.98825424,  0.99303591,  0.98463453]),
- 'cen_6': array([ 0.67782856,  0.68964991,  0.66018018]),
- 'cen_5': array([ 0.18055515,  0.20905392,  0.20022794]),
- 'cen_4': array([ 0.3263156 ,  0.35111616,  0.3175155 ]),
+'phash': [        '0x100000000',
+                  '0x100000000',
+                  '0x100000000',
+                  '0x100000000',
+        ....
+        ....
+        ....
+                  '0x100000000',
+                  '0x100000000',
+                  '0x100000000',
+                  '0x76bf971f',
+                  '0xb77ff7f0',
+                  '0xff7ffce0',
+                  '0xfff3fef8'],
+
+ 'cen': array([17, 17, 17, 48, 48, 48,  3,  3,  3, 58, 58, 58, 37, 37, 37,  9,  9,
+        9, 27, 27, 27], dtype=int32),
  
+'ward': (8798385704298443638,
+                           -2098177597065484460,
+                           -49937642176542373,
+                           7306362158214069439,
+                           -2098177597065484460,
+                           1675627364594718983,
+                           -2098177597065484460,
+                           -5434838886404571572,
+                           7306362158214069439,
+                           -4035475343318357777,
+                           5239582709862753648,
+                           502896730504143507,
+                           -5434838886404571572,
+                           -5434838886404571572,
+                           -6574300014753425568,
+                           -2213663990102495809,
+                           -3213379917254413273,)
+
  'pca_var': array([  2.09597536e-01,   3.30507631e-04,   5.24692794e-05]),
  
  'pca_fac': array([[ 0.57727933,  0.56610672,  0.5884486 ],

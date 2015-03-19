@@ -9,7 +9,7 @@ import numpy as np
 import os
 import operator 
 import sys
-from map_each_image import map_each_image
+from map_each_image import map_each_image, flatten_hist_cen, phash_chunks
 import search
 from load_data import download_zipped_faces
 from hdfs_paths import hdfs_path, make_hdfs_dirs
@@ -42,26 +42,23 @@ sc.addFile(os.path.join(os.path.dirname(__file__),'fuzzify_training.py'))
 # These are options to the flat_map_indicators function
 # which can do these mappings.
 options_template  = {
-        'phash_to_key': False,
-        'key_to_phash': False,
-        'cluster_to_phash': False,
-        'phash_to_cluster': False,
-        'flattened_to_phash': False,
-        'cluster_to_flattened':False,
-        'phash_to_flattened': False,
-        'cluster_to_key': False,
-        'key_to_cluster': False,
-        'flattened_to_key': False,
-        'ward_to_cluster': False,
+        'cluster_to_flattened':True,
+        'cluster_to_key': True,
+        'cluster_to_phash': True,
+        'cluster_to_ward': True,
+        'flattened_to_cluster': True,
+        'flattened_to_key': True,
+        'flattened_to_phash': True,
+        'key_to_cluster': True,
+        'key_to_phash': True,
+        'phash_to_cluster': True,
+        'phash_to_flattened': True,
+        'phash_to_key': True,
+        'ward_to_cluster': True,
+        'ward_to_key': True,
     }
     
 
-
-def phash_chunks(phash_chunk_len, phashes):
-    """Tokenization of perceptive hashes to help
-    with searchability on partial images. 
-    """
-    return [tuple(phashes[idx - phash_chunk_len:idx]) for idx in range(phash_chunk_len, len(phashes))]
 
 
 
@@ -116,12 +113,6 @@ def closestPoint(p, centers):
             bestIndex = i
     return bestIndex
 
-
-def flatten_hist_cen(x):
-    """Flatttens histograms, centroids of individual images, 
-    and pca factors of original images to a row vector."""
-    return np.concatenate((x['cen'].flatten(),
-                            x['histo'].flatten()))
 
 
 def trim_counts_dict(max_len, data, new_data):
@@ -211,81 +202,21 @@ def kmeans(config):
                             ])
     kpsave.saveAsPickleFile(hdfs_path(config, 'km','cluster_center_meta'))
     
-    # do several key value maps for lookups later
-    # copy of options_template for what type of flat map
-    options = options_template.copy()
-    
-    # partial func considering the perceptive hash tokenization
-    # and kmeans centroids
-    flat_map_temp = partial(flat_map_indicators, 
+    def flat(field_to_field):
+        flat_map = partial(flat_map_indicators, 
                         config['phash_chunk_len'], 
-                        kPoints)
-    
-    # partial func taking into account what type of flatMap
-    options['phash_to_key'] = True
-    flat_map = partial(flat_map_temp, options)
-    ph_to_k = data.flatMap(lambda x:flat_map(*x))
-    ph_to_k.groupByKey()
-    
-    # saving perceptive hash to image key
-    ph_to_k.saveAsPickleFile(hdfs_path(config, 'km', 'phash_to_key'))
-    
-    # Now save the cluster idx to image key lookup
-    options['phash_to_key'] = False
-    options['cluster_to_key'] = True
-    flat_map = partial(flat_map_temp, options)
-    cluster_to_k = data.flatMap(lambda x:flat_map(*x))
-    cluster_to_k.groupByKey()
-    cluster_to_k.saveAsPickleFile(hdfs_path(config, 'km', 'cluster_to_key'))
-
-    # Now save the cluster idx to flattened histo and centroids of image
-    options['cluster_to_key'] = False
-    options['cluster_to_flattened'] = True
-    flat_map = partial(flat_map_temp, options)
-    cluster_to_k = data.flatMap(lambda x:flat_map(*x))
-    cluster_to_k.groupByKey()
-    cluster_to_k.saveAsPickleFile(hdfs_path(config, 'km', 'cluster_to_flattened'))
-
-    
-    # Image key to cluster map
-    options['cluster_to_flattened'] = False
-    options['key_to_cluster'] = True
-    flat_map = partial(flat_map_temp, options)
-    key_to_cluster = data.flatMap(lambda x:flat_map(*x))
-    key_to_cluster.saveAsPickleFile(hdfs_path(config, 'km', 'key_to_cluster'))
-    
-    # Image perceptive hash to cluster idx map
-    options['key_to_cluster'] = False
-    options['phash_to_cluster'] = True
-    flat_map = partial(flat_map_temp, options)
-    phash_to_cluster = data.flatMap(lambda x:flat_map(*x))
-    phash_to_cluster.groupByKey()
-    phash_to_cluster.saveAsPickleFile(hdfs_path(config, 'km', 'phash_to_cluster'))
-    
-    # Image cluster to perceptive hash chunks flat map
-    options['phash_to_key'] = options['phash_to_flattened'] = False
-    options['phash_to_cluster'] = False
-    options['cluster_to_phash'] = True
-    flat_map = partial(flat_map_temp, options)
-    cluster_phash = data.flatMap(lambda x:flat_map(*x))
-    cluster_phash.groupByKey()
-    cluster_phash.saveAsPickleFile(hdfs_path(config, 'km', 'cluster_to_phash'))
-    
-    # ward cluster to kmeans cluster            
-    options['cluster_to_phash'] = False
-    options['ward_to_cluster'] = True
-    flat_map = partial(flat_map_temp, options)
-    cluster_phash = data.flatMap(lambda x:flat_map(*x))
-    cluster_phash.groupByKey()
-    cluster_phash.saveAsPickleFile(hdfs_path(config, 'km', 'ward_to_cluster'))
-    
-    # ward  to image key map
-    options['ward_to_cluster'] = False
-    options['ward_to_key'] = True
-    flat_map = partial(flat_map_temp, options)
-    cluster_phash = data.flatMap(lambda x:flat_map(*x))
-    cluster_phash.groupByKey()
-    cluster_phash.saveAsPickleFile(hdfs_path(config, 'km', 'ward_to_key'))
+                        kPoints,
+                        {field_to_field:True})
+        data.flatMap(
+                lambda x: flat_map(*x)
+            ).saveAsPickleFile(
+                hdfs_path(config, 'km', field_to_field)
+            )
+    options = options_template.copy()
+    options.update(config['kmeans_output'])
+    for k, v in options.items():
+        if v:
+            flat(k)
         
 
 if __name__ == "__main__":

@@ -52,6 +52,20 @@ def standardize(image_object, x_down):
     return (image_object, resized, resized_flat)
 
 
+def phash_chunks(phash_chunk_len, phashes):
+    """Tokenization of perceptive hashes to help
+    with searchability on partial images. 
+    """
+    return [tuple(phashes[idx - phash_chunk_len:idx]) for idx in range(phash_chunk_len, len(phashes))]
+
+
+def flatten_hist_cen(x):
+    """Flatttens histograms, centroids of individual images, 
+    and pca factors of original images to a row vector."""
+    return np.concatenate((x['cen'].flatten(),
+                            x['histo'].flatten()))
+
+
 def histogram(img_flat, percents):
     """ Percentiles of each color column in img_flat"""
     return np.array([np.percentile(img_flat[:,i], percents) for i in range(3)], dtype="int32").flatten()
@@ -100,8 +114,9 @@ def ward_clustering(config, img_flat):
     ulab = np.unique(ward.labels_)
     out = []
     for u in ulab:
-        out.append(np.where(ward.labels_ == u)[0])
-        out[-1] = tuple(out[-1] - out[-1][0])
+        inds = np.where(ward.labels_ == u)[0]
+        hsh = hash(tuple(inds - inds[0]))
+        out.append(hsh)
     return tuple(out)
 
 

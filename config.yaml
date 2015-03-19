@@ -38,7 +38,7 @@ n_clusters: 7
 # how many clusters in the kmeans of all images together
 n_clusters_group: 5
 # ward clusters per image
-ward_clusters: 12
+ward_clusters: 20
 # how many kmeans iterations in the group  kmeans of all images
 max_iter_group: 1
 # convergence in group kmeans (pixel euclidean distance)
@@ -51,6 +51,24 @@ quantiles: [1, 2, 5, 15, 25, 50, 75, 85, 95, 98, 99]
 # this sets the number of keys in total
 # that are held in memory that way.
 in_memory_set_len: 8000000
+
+kmeans_output: {
+cluster_to_flattened: True,
+cluster_to_key: True,
+cluster_to_phash: True,
+cluster_to_ward: True,
+flattened_to_cluster: True,
+flattened_to_key: True,
+flattened_to_phash: True,
+key_to_cluster: True,
+key_to_phash: True,
+phash_to_cluster: True,
+phash_to_flattened: True,
+phash_to_key: True,
+ward_to_cluster: True,
+ward_to_key: True
+}
+
 
 # The following arguments pertain to
 # candidate images for which searches
@@ -65,7 +83,7 @@ candidate_spec: /fuzzy/*
 # searching networks of hashes.
 # How many potentially matching image
 # keys to keep on each round.
-search_sample_step: 1000
+search_sample_step: 100
 # What network depth of hash searching
 search_rounds: 1
 # Have the candidate images already been through on_each_image?
