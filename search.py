@@ -8,12 +8,12 @@ from map_each_image import phash_chunks
 
 def cluster_chunk(config, ward_or_phash, x): 
     """Flatten phash or ward clusters """
-    (id_, (data, best_cluster)) = x
+    (id_, (best_cluster, self, distance, ward, phash)) = x
     if ward_or_phash == 'ward':
-        chunks = data[ward_or_phash]
+        chunks = ward
     else:
-        chunks = phash_chunks(config['phash_chunk_len'], data[ward_or_phash])
-    return [((best_cluster,ch ), (id_, ward_or_phash)) for ch in chunks]
+        chunks = phash_chunks(config['phash_chunk_len'], phash)
+    return [(best_cluster , (ch, id_, ward_or_phash)) for ch in chunks]
     
 
 def join_nearest(sc, 
@@ -35,10 +35,10 @@ def join_nearest(sc,
         best = list(map(np.argmax, counts))
         distances = [np.sum((kPoints[i] - flatten_hist_cen(x[1]))**2) for i in range(len(kPoints))]
         best.append(np.argmin(distances))
-        return [(x[0], (b, 'self', distances[best[-1]])) for b in best]
+        return [(x[0], (b, 'self', distances[best[-1]], x[1]['ward'], x[1]['phash'])) for b in best]
     best_clusters = scores.flatMap(_best_cluster)
     best_clusters.cache()
-    best_clusters.sortBy(lambda x:x[1][1][2])
+    best_clusters.sortBy(lambda x:x[1][2])
     phash_c = best_clusters.flatMap(
                     partial(cluster_chunk, 
                                 config,
@@ -46,34 +46,35 @@ def join_nearest(sc,
     ward_c = best_clusters.flatMap(partial(cluster_chunk, 
                                         config,
                                         'ward'))
-    bc2 = best_clusters.map(lambda x: (x[1][0], (x[0], x[1][1:])))
+    bc2 = best_clusters.map(lambda x: (x[1][0], x))
     cluster_to_phash = sc.pickleFile(hdfs_path(config, 
                                                 'km', 
                                                 'cluster_to_phash')).join(bc2)
     cluster_to_ward = sc.pickleFile(hdfs_path(config, 
                                             'km', 
                                             'cluster_to_ward')).join(bc2)
-    # (cluster, ((b, 'self'), ward))
-    phash_c_join = phash_c.join(cluster_to_phash)
-    ward_c_join = ward_c.join(cluster_to_ward)
-    phash_c_join.map(
-            lambda x:(x[1][1], x)
-        ).join(
-            sc.pickleFile(hdfs_path(config, 'km', 'phash_to_key'))
-        )
-    ward_c_join.map(
-            lambda x:(x[1][1], x)
-        ).join(
-            sc.pickleFile(hdfs_path(config, 'km', 'ward_to_key'))
-        )
-    ward_sample = ward_c_join.take(config['search_sample_step']), 
-    phash_sample = phash_c_join.take(config['search_sample_step'])
-    rdds = ( score_join.map(lambda x:(x[0],x[1][1])), ward_c_join, phash_c_join)
+
+    rdds = ( ward_c, phash_c)
+    table_names = ('ward_matches','phash_matches')
+    labels = ('ward_to_key','phash_to_key')
     out = {}
-    for table, rdd in zip(('euclidean','ward','phash'), rdds):
-        p = hdfs_path(config, config['candidate_batch'], table)
-        out[table] = rdd.take(config['search_sample_step'])
+    for table, rdd, label in zip(table_names, rdds, labels):
+    
+        rdd.join(
+                cluster_to_phash
+            .map(
+                lambda x: (x[1][1],x)
+            ).join(
+                sc.pickleFile(hdfs_path(config, 'km', label))
+            )
+        )
+        samp = rdd.take(config['search_sample_step'])
+        path = hdfs_path(config, 'candidates',config['candidate_batch'], table)
+        out[table] = samp
+        rdd.saveAsPickleFile(path)
     return out
+
+
 def find_similar(sc, config):
     
     kmeans_meta = sc.pickleFile(hdfs_path(config, 'km','cluster_center_meta'))
@@ -102,6 +103,6 @@ def find_similar(sc, config):
                                 phash_unions,
                                 ward_unions,
                             scores)
-        from pprint import pprint 
-        pprint(samples)        
+        from pprint import pformat
+        print(pformat(samples)[:30000])
         

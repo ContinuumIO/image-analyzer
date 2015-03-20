@@ -71,16 +71,11 @@ def histogram(img_flat, percents):
     return np.array([np.percentile(img_flat[:,i], percents) for i in range(3)], dtype="int32").flatten()
 
 
-def hash_ordered_ints(one_zero):
+def hash_ordered_ints(bits, one_zero):
     chunks = []
-    chunk_size = 32
+    chunk_size = bits
     for idx in range(0, len(one_zero) - chunk_size, chunk_size):
-        
-        num = int(one_zero[idx+chunk_size - 1])
-        for poww in range(0, chunk_size):
-            if one_zero[idx + poww]:
-                num += 2 ** poww
-        chunks.append(hex(num))
+        chunks.append(hash(tuple(one_zero[idx:idx + chunk_size])))
     return chunks
 
 
@@ -91,7 +86,7 @@ def luminosity_grayscale(img_flat):
     return img_flat[:,0] * .21 + .72 * img_flat[:,1] + 0.07 * img_flat[:,2]
 
 
-def perceptive_hash(img_flat):
+def perceptive_hash(config, img_flat):
     """perceptive_hash of img_flat 
 
     Parameters:
@@ -101,7 +96,7 @@ def perceptive_hash(img_flat):
     mn = img_flat2.mean()
     img_flat2[img_flat2 < mn] = 0
     img_flat2[img_flat2 >= mn] = 1
-    return hash_ordered_ints(img_flat2)
+    return hash_ordered_ints(config['phash_bits'],img_flat2)
 
 
 def ward_clustering(config, img_flat):
@@ -152,7 +147,7 @@ def on_each_image_selection(config,
     km.fit(image_array_sample[:config['kmeans_sample']])
     pca = decomposition.PCA(copy=True, n_components=None, whiten=True) 
     color_pca = pca.fit(img_flat)
-    phash = perceptive_hash(img_flat)
+    phash = perceptive_hash(config, img_flat)
     ret = {}
     _, ward_smaller, smaller_flat = standardize(image_smaller, config['ward_x_down'])
     ret.update({

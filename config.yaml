@@ -10,40 +10,51 @@ input_spec: /imgs/*
 test_name: t1
 # actions: list that may include some or all of 
 #     [download, on_each_image, kmeans, find_similar]
-actions: [ find_similar]
+actions: [download, on_each_image, kmeans, find_similar]
+# If running find_similar, have the candidate images 
+# already been through on_each_image?  
+candidate_has_mapped: False
+
 # Should the image analysis be larger to include
 # all the images' quadrants as separate mapped images 
 # (i.e. full image + 4 quandrants separately)  True/ False
 quadrants: True
 # For kmeans on one image, perceptive hash, and histogramming,
 # rescale the image to this x pixel count then maintain aspect ratio
-x_down: 256
+x_down: 128
 # For ward clustering on each image, downscale x pixel count
 # to this, then maintain aspect ratio.  (Ward clustering 
 # is significantly slower than the other analyses, so 
 # smaller size helps.)
-ward_x_down: 64
+ward_x_down: 32
 # Perceptive hashes are hex strings in a list
 # phash_chunk_len sets the sub-list length to
 # find tokens with the perceptive hash list of hexes.
+# Each perceptive hash should be this many bits
+phash_bits: 64
+# And this many of the phash N-bit hexes should
+# be combined for keys typically
 phash_chunk_len: 2
 # The kmeans on the individual image is done on a sample
 # to save time.  This is the max number of pixels to 
 # include there.
-kmeans_sample: 1800
+kmeans_sample: 1400
 # how many kmeans iterations on each individual image
-maxIterations: 5
+maxIterations: 3
 # how many kmeans clusters on each image's colors
-n_clusters: 7
+n_clusters: 5
 # how many clusters in the kmeans of all images together
 n_clusters_group: 5
 # ward clusters per image
 ward_clusters: 20
 # how many kmeans iterations in the group  kmeans of all images
 max_iter_group: 1
-# convergence in group kmeans (pixel euclidean distance)
-kmeans_group_converge: 100 
-# quantiles to get of each color histogram 
+# convergence in group kmeans 
+# (summed pixel euclidean distance in a space where rows
+#   are histograms and individual image's centroids flattened)
+# The length of 'quantiles' below and 'n_clusters' influence this.
+kmeans_group_converge: 10000 
+# quantiles to get of each color histogram.  
 # quantiles are a list of 0 to 100 based arguments to np.percentile
 quantiles: [1, 2, 5, 15, 25, 50, 75, 85, 95, 98, 99]
 # the reducers do some unions and counting
@@ -86,8 +97,6 @@ candidate_spec: /fuzzy/*
 search_sample_step: 100
 # What network depth of hash searching
 search_rounds: 1
-# Have the candidate images already been through on_each_image?
-candidate_has_mapped: True
 
 
 

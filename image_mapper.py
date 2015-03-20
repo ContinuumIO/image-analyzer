@@ -29,6 +29,7 @@ TEST_DATA = 'http://vasc.ri.cmu.edu/idb/images/face/frontal_images/images.tar'
 # keys output in each dictionary for on_each_image.  The values are np.arrays
 RESULT_KEYS = ['cen',
               'histo',
+              'ward',
              'pca_fac',
              'pca_var',
              'phash']
@@ -164,7 +165,7 @@ def kmeans(config):
     within_set_sse = []
     while tempDist > convergeDist:
         max_len = config['in_memory_set_len']  / K
-        ward_max_len = int(.03 * max_len)
+        ward_max_len = int(.5 * max_len)
         phash_max_len = int(max_len - ward_max_len)
         closest = data.map(partial(km_map, kPoints))
         pointStats = closest.reduceByKey(partial(reduce_dist, 
@@ -220,6 +221,9 @@ def kmeans(config):
         
 
 if __name__ == "__main__":
+    import datetime
+    started = datetime.datetime.now()
+    print('started at:::', started)
     actions = config['actions']
     config['candidate_measures_spec'] = hdfs_path(config, 
                                                 'candidates', 
@@ -236,3 +240,9 @@ if __name__ == "__main__":
         kmeans(config)
     if 'find_similar' in actions:
         search.find_similar(sc, config)
+    ended = datetime.datetime.now()
+    print('Elapsed Time (seconds):::', 
+            (ended - started).total_seconds(),
+            '\nAt', 
+            ended.isoformat())
+    
