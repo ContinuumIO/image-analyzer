@@ -26,7 +26,7 @@ sc = SparkContext('yarn-client', 'pyspark-demo', conf=conf)
 
 # some face images for testing
 TEST_DATA = 'http://vasc.ri.cmu.edu/idb/images/face/frontal_images/images.tar'
-# keys output in each dictionary for on_each_image.  The values are np.arrays
+# keys output in each dictionary for map_each_image.  The values are np.arrays
 RESULT_KEYS = ['cen',
               'histo',
               'ward',
@@ -98,6 +98,8 @@ def flat_map_indicators(phash_chunk_len,
         items += [(k, best_cluster)]
     if options.get('ward_to_cluster'):
         items += [(wa, best_cluster) for wa in wards]
+    if options.get('cluster_to_ward'):
+        items += [(best_cluster, wa) for wa in wards]
     if options.get('ward_to_key'):
         items += [(wa, k) for wa in wards]
     return items
@@ -154,7 +156,7 @@ def reduce_dist(ward_max_len, phash_max_len, a, b):
 def kmeans(config):
     """ Kmeans with merging and counting of perceptive hashes among
     clusters."""
-    measures = sc.pickleFile(hdfs_path(config, 'on_each_image', 'measures'))
+    measures = sc.pickleFile(hdfs_path(config, 'map_each_image', 'measures'))
     data = measures.map(lambda x:(x[1]['id'], flatten_hist_cen(x[1]), x[1]['phash'], x[1]['ward'])).cache()
     K = config['n_clusters_group']
     convergeDist = config['kmeans_group_converge']
@@ -225,17 +227,13 @@ if __name__ == "__main__":
     started = datetime.datetime.now()
     print('started at:::', started)
     actions = config['actions']
-    config['candidate_measures_spec'] = hdfs_path(config, 
-                                                'candidates', 
-                                                config['candidate_batch'] ,
-                                                'measures'
-                                                )
     make_hdfs_dirs(config)
     if 'download' in actions:
         download_zipped_faces(config)
-    if  'on_each_image' in actions:
+        print('download took', datetime.datetime.now() - started)
+    if  'map_each_image' in actions:
         map_each_image(sc, config, config['input_spec'], 
-                          hdfs_path(config, 'on_each_image', 'measures'))
+                          hdfs_path(config, 'map_each_image', 'measures'))
     if  'kmeans' in actions:
         kmeans(config)
     if 'find_similar' in actions:
@@ -245,4 +243,3 @@ if __name__ == "__main__":
             (ended - started).total_seconds(),
             '\nAt', 
             ended.isoformat())
-    

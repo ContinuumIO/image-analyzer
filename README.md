@@ -2,33 +2,33 @@
 ### Steps in Analysis on Each Image
 * Standardize image (resizing, removal of alpha channel for now)
 * Percentiles of colors in standardized image.  
-* Kmeans standardized image. Output the image's centroids.
-* Perceptive hash of standardized image.  Encoded as hex and in chunks.
+* Kmeans of the colors within 1 standardized image. Output the image's centroids.
+* Perceptive hash of standardized image.  Hashed in chunks.
 * PCA factors and variance.
-* Ward clustering, as described here: http://scikit-learn.org/stable/auto_examples/cluster/plot_lena_ward_segmentation.html
+* Ward clustering <a>http://scikit-learn.org/stable/auto_examples/cluster/plot_lena_ward_segmentation.html>as described here </a>
+
+* Images are analyzed in full and in quadrants
+
 ### Timing
-* On my Mac, each image takes about .2 (mean) +/- .3 (stdev) seconds to process (skewed right).
+* On my Mac, each image takes about .2 (mean) +/- .3 (stdev) seconds to process (skewed right).  Depends on resolutions settings in config.yaml.
 
 ### TODO on each image analysis 
 * Speed up loading of images to hdfs ?
 * Experiment with numba for patch statistics 
 * Standardize images better (padding is not done)
 * Add a job group to different parts of the process so they can be killed if needed
-* Add the scikit learn's agglomerative clustering feature recognition to on_each_image.py (hash those features)
-* Could the same on_each_image function be applied again to all photos but zooming in or as a tiny thumbnail?
 * When searching for matches of candidate images against db, save any ancillary information learned
 * Clean up system of hdfs pathing so that it is more modular (specific paths can be added to searches, etc)
 * As part of that hdfs path clean up, also do some checks for required paths earlier on in algorithms
-* Analysis of image metadata is not done, but some of the PIL Image data are saved in dict.
+* Analysis of image metadata is not done, but some of the PIL Image data are saved in dict in map_each_image
 
-### Pipeline
+### Pipeline Steps
 * Map the images from spark/hdfs to on_each_image function
 * Output as example below to a table so that the outer machine learning algorithm can revisit image results without recalculating them.
-* Do kmeans where the columns are the histogram and centroids of each image
-* Keep a bag of perceptive hash chunks within each cluster
-* Keep a bag of ward cluster hashes
-* Make inverse map tables like perceptive hash key to cluster id or hash to picture id
-* Extract covariance matrix in kmeans passes
+* Kmeans among all images where the columns are the histogram and centroids of each image's colors alone
+* During kmeans, keep counts of common perceptive hash chunks and common ward cluster hashes
+* Make inverse map tables like perceptive hash key to cluster id and ward cluster hash to image id
+
 
 ### HDFS Directory structure
 * input_spec: where in hdfs are the training images, e.g. /imgs/*
@@ -37,7 +37,7 @@
 <code>
   t1/
     
-    on_each_image/
+    map_each_image/
     
       measures
     

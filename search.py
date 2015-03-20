@@ -13,8 +13,17 @@ def cluster_chunk(config, ward_or_phash, x):
         chunks = ward
     else:
         chunks = phash_chunks(config['phash_chunk_len'], phash)
-    return [(best_cluster , (ch, id_, ward_or_phash)) for ch in chunks]
+    return [(best_cluster , (ch, id_)) for ch in chunks]
     
+def count_keys(x):
+    counts = {}
+    for u in x[1]:
+        if u in counts:
+            counts[u] +=  1
+        else:
+            counts[u] = 1
+    best = sorted(counts.items(), key=lambda x:-x[1])[0]
+    return (x[0], best, counts)
 
 def join_nearest(sc, 
                 config, 
@@ -22,6 +31,8 @@ def join_nearest(sc,
                 phash_unions, 
                 ward_unions, 
                 scores):
+
+
     pw = tuple(zip(('phash', 'ward'), (phash_unions, ward_unions)))
     def _best_cluster(x):
         counts =[]
@@ -46,32 +57,42 @@ def join_nearest(sc,
     ward_c = best_clusters.flatMap(partial(cluster_chunk, 
                                         config,
                                         'ward'))
-    bc2 = best_clusters.map(lambda x: (x[1][0], x))
     cluster_to_phash = sc.pickleFile(hdfs_path(config, 
                                                 'km', 
-                                                'cluster_to_phash')).join(bc2)
+                                                'cluster_to_phash'))
     cluster_to_ward = sc.pickleFile(hdfs_path(config, 
                                             'km', 
-                                            'cluster_to_ward')).join(bc2)
-
+                                            'cluster_to_ward'))
     rdds = ( ward_c, phash_c)
     table_names = ('ward_matches','phash_matches')
     labels = ('ward_to_key','phash_to_key')
     out = {}
     for table, rdd, label in zip(table_names, rdds, labels):
     
-        rdd.join(
-                cluster_to_phash
-            .map(
-                lambda x: (x[1][1],x)
-            ).join(
-                sc.pickleFile(hdfs_path(config, 'km', label))
-            )
+        join_on_cluster = rdd.join(
+            cluster_to_phash if table == 'phash_matches' else cluster_to_ward
         )
-        samp = rdd.take(config['search_sample_step'])
+        map_ward_or_phash = join_on_cluster.map(lambda x:(x[1][0][0], x))
+        hash_joined = map_ward_or_phash.join(
+            sc.pickleFile(hdfs_path(config, 'km', label))
+        )
+        hash_joined.saveAsPickleFile(
+            hdfs_path(config,'candidates', config['candidate_batch'], table + '_full_join')
+        )
+        # pulling the two image keys out into pairs
+        cand_key_to_key = hash_joined.map(
+            lambda x: (x[1][0][1][0][1], x[1][-1])
+        )
+        samp = cand_key_to_key.take(config['search_sample_step'])
         path = hdfs_path(config, 'candidates',config['candidate_batch'], table)
         out[table] = samp
-        rdd.saveAsPickleFile(path)
+        as_key_counts = cand_key_to_key.groupByKey(
+            ).map(
+            count_keys
+            )
+        as_key_counts.saveAsPickleFile(
+                hdfs_path(config,'candidates', config['candidate_batch'], "%s_key_counts" % path)
+            )
     return out
 
 

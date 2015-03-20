@@ -17,7 +17,7 @@ def hdfs_path(*args):
 def make_hdfs_dirs(config):
     root = os.path.join('/',config['test_name'])
     paths = [root,
-             '%s/on_each_image' % root,
+             '%s/map_each_image' % root,
              '%s/km' % root,
              '%s/candidates' % root,
              '%s/candidates/%s' % (root, config['candidate_batch']),

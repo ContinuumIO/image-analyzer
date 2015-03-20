@@ -6,14 +6,14 @@ example_data: /imgs/
 fuzzy_example_data: /fuzzy/
 # the wildcard input that specifies where to get hdfs images
 input_spec: /imgs/*
-# a name of a set of kmeans and on_each_image measurements
+# a name of a set of kmeans and map_each_image measurements
 test_name: t1
 # actions: list that may include some or all of 
-#     [download, on_each_image, kmeans, find_similar]
-actions: [download, on_each_image, kmeans, find_similar]
+#     [download, map_each_image, kmeans, find_similar]
+actions: [find_similar]
 # If running find_similar, have the candidate images 
-# already been through on_each_image?  
-candidate_has_mapped: False
+# already been through map_each_image?  
+candidate_has_mapped: True
 
 # Should the image analysis be larger to include
 # all the images' quadrants as separate mapped images 
@@ -21,17 +21,17 @@ candidate_has_mapped: False
 quadrants: True
 # For kmeans on one image, perceptive hash, and histogramming,
 # rescale the image to this x pixel count then maintain aspect ratio
-x_down: 128
+x_down: 256
 # For ward clustering on each image, downscale x pixel count
 # to this, then maintain aspect ratio.  (Ward clustering 
 # is significantly slower than the other analyses, so 
 # smaller size helps.)
-ward_x_down: 32
+ward_x_down: 64
 # Perceptive hashes are hex strings in a list
 # phash_chunk_len sets the sub-list length to
 # find tokens with the perceptive hash list of hexes.
 # Each perceptive hash should be this many bits
-phash_bits: 64
+phash_bits: 2048
 # And this many of the phash N-bit hexes should
 # be combined for keys typically
 phash_chunk_len: 2
@@ -58,11 +58,16 @@ kmeans_group_converge: 10000
 # quantiles are a list of 0 to 100 based arguments to np.percentile
 quantiles: [1, 2, 5, 15, 25, 50, 75, 85, 95, 98, 99]
 # the reducers do some unions and counting
-# of perceptive hash and ward label chunks
+# of perceptive hash and ward cluster hash chunks.
 # this sets the number of keys in total
 # that are held in memory that way.
 in_memory_set_len: 8000000
 
+#This dictionary, kmeans_output, sets
+# all the lookup tables to create after
+# kmeans iterations are done.  
+# NOTE. Not all combinations are consistent
+# with the find_similar step as written.
 kmeans_output: {
 cluster_to_flattened: True,
 cluster_to_key: True,
@@ -87,6 +92,10 @@ ward_to_key: True
 
 # a name for a set of candidate images
 candidate_batch: c1
+# where should the measurements be saved, or
+# if indicated True candidate_has_mapped above, then
+# it is assumed map_each_image has been applied to candidate batch.
+candidate_measures_spec: /t1/candidates/c1/measures
 # Where are the candidate images in hdfs
 # this is a wildcard file spec
 candidate_spec: /fuzzy/*
