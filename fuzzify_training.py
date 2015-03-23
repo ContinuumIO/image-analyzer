@@ -7,9 +7,9 @@ def fuzzify(config, fname, hdfs_name):
 	from PIL import Image
 	img = Image.open(fname)
 	n = np.array(img)
-	for _ in range(10):
-		n = n +  sum(np.gradient(n)) * .001
-	new = Image.fromarray(np.array(n, dtype="uint8"))
+	for _ in range(25):
+		n = n +  sum(np.gradient(n)) * .005
+	new = Image.fromarray(np.array(round(n), dtype=np.uint8))
 	loc_name = fname + 'fuz'
 	new.save(loc_name,format="png")
 	print(sp.Popen(['hadoop', 
@@ -18,4 +18,12 @@ def fuzzify(config, fname, hdfs_name):
 				loc_name, 
 				hdfs_path(config, 
 						config['fuzzy_example_data'], 
-						hdfs_name)]))
+						hdfs_name)]).communicate())
+
+
+if __name__ == "__main__":
+	import sys
+	local_name, test_name, fuzzy_example_data, hdfs_name = sys.argv[1:]
+	fuzzify({'test_name':test_name,
+			'fuzzy_example_data': fuzzy_example_data}, 
+			local_name, hdfs_name)

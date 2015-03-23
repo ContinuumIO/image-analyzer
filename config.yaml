@@ -10,15 +10,22 @@ input_spec: /imgs/*
 test_name: t1
 # actions: list that may include some or all of 
 #     [download, map_each_image, kmeans, find_similar]
-actions: [find_similar]
+actions: [ map_each_image, kmeans, find_similar]
 # If running find_similar, have the candidate images 
 # already been through map_each_image?  
-candidate_has_mapped: True
+candidate_has_mapped: False
 
-# Should the image analysis be larger to include
-# all the images' quadrants as separate mapped images 
-# (i.e. full image + 4 quandrants separately)  True/ False
-quadrants: True
+# Also consider the training/candidate images in patches?
+# Set patch to Null to ignore or include the dictionary and 3 keys
+# max_patches --> how many patches to randomly pull
+# random_state --> integer seed or Null
+# window_as_ratio ---> x, y that are multiplied by image size to get window 
+#( window then is an argument for sklearn.feature_extraction.image.extract_patches_2d)
+patch: {
+max_patches: 20,
+random_state: 5,
+window_as_ratio: [.5, .5]
+}
 # For kmeans on one image, perceptive hash, and histogramming,
 # rescale the image to this x pixel count then maintain aspect ratio
 x_down: 256
@@ -31,7 +38,7 @@ ward_x_down: 64
 # phash_chunk_len sets the sub-list length to
 # find tokens with the perceptive hash list of hexes.
 # Each perceptive hash should be this many bits
-phash_bits: 2048
+phash_bits: 4096
 # And this many of the phash N-bit hexes should
 # be combined for keys typically
 phash_chunk_len: 2
@@ -45,10 +52,14 @@ maxIterations: 3
 n_clusters: 5
 # how many clusters in the kmeans of all images together
 n_clusters_group: 5
-# ward clusters per image
-ward_clusters: 20
+# ward clusters per image.  Keeping this small 
+# can reduce the size of the join operation at the 
+# find_similar step. (i.e. 1 hash per cluster 
+# per selection per training image joined to 
+# candidates with same.)
+ward_clusters: 8
 # how many kmeans iterations in the group  kmeans of all images
-max_iter_group: 1
+max_iter_group: 2
 # convergence in group kmeans 
 # (summed pixel euclidean distance in a space where rows
 #   are histograms and individual image's centroids flattened)
@@ -105,6 +116,9 @@ candidate_spec: /fuzzy/*
 # keys to keep on each round.
 search_sample_step: 100
 # What network depth of hash searching
+# Note this is a placeholder and 
+# should remain at 1 until
+# find_similar function is improved.
 search_rounds: 1
 
 

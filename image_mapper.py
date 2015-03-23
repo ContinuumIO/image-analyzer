@@ -24,8 +24,6 @@ conf = SparkConf()
 conf.set('spark.executor.instances', 10)
 sc = SparkContext('yarn-client', 'pyspark-demo', conf=conf)
 
-# some face images for testing
-TEST_DATA = 'http://vasc.ri.cmu.edu/idb/images/face/frontal_images/images.tar'
 # keys output in each dictionary for map_each_image.  The values are np.arrays
 RESULT_KEYS = ['cen',
               'histo',
@@ -59,9 +57,6 @@ options_template  = {
         'ward_to_key': True,
     }
     
-
-
-
 
 def flat_map_indicators(phash_chunk_len,
                         kPoints,
@@ -136,7 +131,8 @@ def trim_counts_dict(max_len, data, new_data):
 
 def km_map(kPoints, p):
     """For point p, find closest cluster idx.
-    Emit a count dictionary of perceptive hashes"""
+    Emit that with a count dictionary of perceptive hashes
+    and same for ward hashes"""
     closest_idx = closestPoint(p[1], kPoints)
     phash_counter= {phash: p[2].count(phash) for phash in p[2]}
     ward_counter= {wa: p[3].count(wa) for wa in p[3]}
@@ -145,7 +141,7 @@ def km_map(kPoints, p):
 
 def reduce_dist(ward_max_len, phash_max_len, a, b):
     """Reduce by calculating new points in kmeans and also
-    merging the perceptive hash counts dictionary."""
+    merging the perceptive hash and ward hash counts dictionaries."""
     (x1, y1, z1, wa1) = a
     (x2, y2, z2, wa2) = b
     phashes_union = trim_counts_dict(phash_max_len, z1, z2)
@@ -154,8 +150,8 @@ def reduce_dist(ward_max_len, phash_max_len, a, b):
 
 
 def kmeans(config):
-    """ Kmeans with merging and counting of perceptive hashes among
-    clusters."""
+    """ Kmeans with merging and counting of perceptive hashes and 
+    ward hashes among clusters."""
     measures = sc.pickleFile(hdfs_path(config, 'map_each_image', 'measures'))
     data = measures.map(lambda x:(x[1]['id'], flatten_hist_cen(x[1]), x[1]['phash'], x[1]['ward'])).cache()
     K = config['n_clusters_group']
@@ -223,6 +219,10 @@ def kmeans(config):
         
 
 if __name__ == "__main__":
+    if config.get('random_state'):
+        config['random_state'] = np.random.RandomState(config['random_state'])
+    else:
+        config['random_state'] = np.random.RandomState(None)
     import datetime
     started = datetime.datetime.now()
     print('started at:::', started)

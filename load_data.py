@@ -14,16 +14,17 @@ Then: submit load_data.py
 """
 import requests
 import subprocess as sp
-import os
 from StringIO import StringIO
 from fuzzify_training import fuzzify
+import os
 utmp = "/tmp/hdfs_tmp/"
-os.chdir(utmp)
+
 TEST_DATA = 'http://vasc.ri.cmu.edu/idb/images/face/frontal_images/images.tar'
 images_test = os.path.join(utmp, 'images_test')
 def download_zipped_faces(config, url=TEST_DATA, fname=images_test):
     from tarfile import TarFile
-    import os
+    
+    os.chdir(utmp)
     req = requests.get(url, stream=True)
     f = open(fname, 'w')
     for chunk in req.iter_content(chunk_size=1024):

@@ -17,22 +17,37 @@ setup_remote (){
 	conda cluster manage $CLUSTER  install PIL  numpy;
 	conda cluster manage $CLUSTER  install scikit-image;
 	conda cluster manage $CLUSTER  install numpy scipy scikit-learn pandas tornado;
+	rmt "apt-get install unzip";
 }
 # Run setup_remote just the first time
 setup_remote
 
-# Run each of these on first time or if you change them
+load_faces94 (){
+	conda cluster submit $CLUSTER  $IMG/fuzzify_training.py --verbose
+	conda cluster submit $CLUSTER  $IMG/load_faces94.sh --verbose;
+	rmt "cd /tmp; bash load_faces94.sh" ;
+}
+
+# Run this once. 
+load_faces94
+
+
+# Run each of these file submit commands
+# on first time or if you change the files.
+# Note you will see an error when submitting the config.yaml
+# because it tries to run the .yaml as python script.  
+# Change these command to use "put" when 
+# that command is available.
+
 conda cluster submit $CLUSTER  $IMG/config.yaml 
 conda cluster submit $CLUSTER  $IMG/hdfs_paths.py --verbose
-conda cluster submit $CLUSTER  $IMG/fuzzify_training.py --verbose
 conda cluster submit $CLUSTER  $IMG/map_each_image.py --verbose
 
 conda cluster submit $CLUSTER  $IMG/search.py --verbose
-# the following is for a temporary directory into which
-# hdfs user can download and untar an example images tar
-rmt "rm -rf  /tmp/hdfs_tmp && mkdir -p  /tmp/hdfs_tmp && chown -R hdfs /tmp/hdfs_tmp"
-conda cluster submit $CLUSTER  $IMG/load_data.py --verbose
+
+
+
 # Finally, running it, referencing the files above, and 
 # using the settings in config.yaml.
-conda cluster submit image_cluster13  $IMG/image_mapper.py --verbose
 
+conda cluster submit image_cluster13  $IMG/image_mapper.py --verbose

@@ -4,8 +4,8 @@ import os
 from setuptools import setup
 
 setup(name='image_analyzer',
-      version='0.0.0',
-      description='Data migration utilities',
+      version='0.1.1',
+      description='Searching images using hashes and clustering',
       url='http://github.com/ContinuumIO/image-analyzer/',
       author='Peter Steinberg',
       author_email='psteinberg@continuum.io',
@@ -14,5 +14,10 @@ setup(name='image_analyzer',
       install_requires=list(open('requirements.txt').read().strip().split('\n')),
       long_description=(open('README.rst').read() if os.path.exists('README.rst')
                         else ''),
-      modules=['image_mapper','on_each_image','similarity'],
+      py_modules=['image_mapper',
+                  'map_each_image',
+                  'fuzzify_training', 
+                  'load_data',
+                  'search',
+                  'hdfs_paths'],
       zip_safe=False)

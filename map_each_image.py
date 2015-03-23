@@ -7,6 +7,7 @@ import copy
 from StringIO import StringIO
 from scipy import misc, stats
 from sklearn.cluster import KMeans
+from sklearn.feature_extraction.image import extract_patches_2d
 from sklearn.metrics import pairwise_distances_argmin
 from sklearn.datasets import load_sample_image
 from sklearn.utils import shuffle
@@ -23,7 +24,7 @@ from sklearn.cluster import AgglomerativeClustering
 
 def standardize(image_object, x_down):
     """ 
-    standardize(image_object, fill_value=255)
+    standardize(image_object, x_down)
 
     Removes the alpha channel.
     Resizes to config['x_down'] as x
@@ -32,18 +33,20 @@ def standardize(image_object, x_down):
     Parameters:
     image_object: 3-d or 2-d array
     """
-    if len(image_object.shape) == 3:
-        w, h, d = tuple(image_object.shape)
-        if d >= 3:
-            # Ignore alpha for now
-            image_object = image_object[:,:,:3]
-            d = 3
-    else:
+    w, h, d = tuple(image_object.shape)
+    if d == 4:
+        
+    
+        # Ignore alpha for now
+        image_object = image_object[:,:,:3]
+        d = 3
+    elif d == 1:
         w, h = image_object.shape
         d = 3
+        # TODO...not sure how to handle
+        # 1 band photo
         image_object2 = np.empty((w,h,3))
-        for idx in range(d):
-            image_object2[:,:,idx] = image_object
+        image_object2[:,:, 0] = image_object2[:,:, 1] = image_object2[:,:, 2] = image_object / 3.0
         image_object = image_object2
     ylen = int(x_down * h / w + 0.5)
     resized = resize(image_object, (x_down, ylen))
@@ -68,7 +71,7 @@ def flatten_hist_cen(x):
 
 def histogram(img_flat, percents):
     """ Percentiles of each color column in img_flat"""
-    return np.array([np.percentile(img_flat[:,i], percents) for i in range(3)], dtype="int32").flatten()
+    return np.array([np.percentile(img_flat[:,i], percents) for i in range(3)], dtype=np.float32).flatten()
 
 
 def hash_ordered_ints(bits, one_zero):
@@ -135,8 +138,6 @@ def on_each_image_selection(config,
             other identifiers that need to be in output dict.
         Supply one of the above"""
     if image_object is None:
-        # TODO do we assume this can read every
-        # image, or fallback....
         image_object = misc.imread(img_file)
     _, image_smaller, img_flat = standardize(image_object, config['x_down'])
     w, h, d = image_smaller.shape
@@ -156,7 +157,7 @@ def on_each_image_selection(config,
         'histo': full_histo,
         'phash': phash,
         'ward': ward_clustering(config, smaller_flat),
-        'cen': np.array(km.cluster_centers_, dtype="int32").flatten(),
+        'cen': np.array(km.cluster_centers_, dtype=np.float32).flatten(),
     })
     if metadata:
         ret.update(metadata)
@@ -174,31 +175,22 @@ def standardize_image_meta(img):
     m2['format_description'] = getattr(img, 'format_description', '')
     return m2
 
-def load_image(quadrants, image):
+def load_image(config, image):
     """Load one image, where image = (key, blob)"""
     from StringIO import StringIO
     from PIL import Image
-    img_quads = []
     img = Image.open(StringIO(image[1]))
-    if quadrants:
-        bbox = img.getbbox()
-        bbox2 =list(bbox) 
-        temp_x = int((bbox[0] + bbox[2]) / 2.0)
-        bbox2[0] = temp_x
-        img_quads.append(img.crop(tuple(bbox2)))
-        temp_y = int((bbox[1] + bbox[3]) / 2.0)
-        bbox2[1] = temp_y
-        img_quads.append(img.crop(tuple(bbox2)))
-        bbox2[1] = bbox[1]
-        bbox2[2] = temp_x
-        bbox2[0] = bbox[0]
-        img_quads.append(img.crop(tuple(bbox2)))
-        bbox2[3] = temp_y
-        img_quads.append(img.crop(tuple(bbox2)))
-        img_quads = [np.asarray(i, dtype=np.uint8) for i in img_quads]
+    img_patches = []
+    if config.get('patch'):
+        window = [int(wf * sz) for wf,sz in zip(img.size, config['patch']['window_fraction'])]
+        img_patches=extract_patches_2d(
+            np.asarray(img), 
+            window, 
+            max_patches=config['patch']['max_patches'], 
+            random_state=config['random_state'])
     image_object = np.asarray(img, dtype=np.uint8)
     meta = standardize_image_meta(img)
-    return  image_object, img_quads, meta
+    return  image_object, img_patches, meta
     
 
 def on_each_image(config, image):
@@ -210,7 +202,7 @@ def on_each_image(config, image):
     image: tuple
         Filename, blob to load by PIL 
         """
-    img, quads, meta = load_image(config.get('quandrants'), image)
+    img, quads, meta = load_image(config,image)
     meta2 = copy.deepcopy(meta)
     meta2['is_full'] = False
     meta['is_full'] = True
@@ -244,3 +236,21 @@ def map_each_image(sc, config, input_spec, output_path):
                 )
     img_out.saveAsPickleFile(output_path)
     return img_out
+
+def example(filename):
+    from StringIO import StringIO
+    s = StringIO()
+    s.write(open(filename).read())
+    image_object = load_image({},(filename,s.getvalue()))
+    output = on_each_image_selection({
+                'ward_x_down': 64, 
+                'x_down': 256,
+                'quantiles':(50,),
+                'n_clusters': 5,
+                'ward_clusters': 5,
+                'kmeans_sample': 2000,
+                'phash_bits': 256
+            },
+            image_object=image_object[0], 
+            metadata={'id': filename})
+    return image_object, output

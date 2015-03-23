@@ -14,8 +14,13 @@ def cluster_chunk(config, ward_or_phash, x):
     else:
         chunks = phash_chunks(config['phash_chunk_len'], phash)
     return [(best_cluster , (ch, id_)) for ch in chunks]
+
     
 def count_keys(x):
+    """When keys to training images are found to be 
+    potentially matching a candidate, this reducer will 
+    count the 'votes' for each of training image hashes"""
+
     counts = {}
     for u in x[1]:
         if u in counts:
@@ -23,7 +28,8 @@ def count_keys(x):
         else:
             counts[u] = 1
     best = sorted(counts.items(), key=lambda x:-x[1])[0]
-    return (x[0], best, counts)
+    return (x[0], (best, counts))
+
 
 def join_nearest(sc, 
                 config, 
@@ -31,8 +37,11 @@ def join_nearest(sc,
                 phash_unions, 
                 ward_unions, 
                 scores):
-
-
+    
+    """Use candidates' scores to assign them to best clusters based 
+    on euclidean distance and number of matching hashes, ward or perceptive.
+    Join those assigned clusters to perceptive and ward hashes from training
+    and then join hashes to keys."""
     pw = tuple(zip(('phash', 'ward'), (phash_unions, ward_unions)))
     def _best_cluster(x):
         counts =[]
@@ -67,6 +76,7 @@ def join_nearest(sc,
     table_names = ('ward_matches','phash_matches')
     labels = ('ward_to_key','phash_to_key')
     out = {}
+    to_join = []
     for table, rdd, label in zip(table_names, rdds, labels):
     
         join_on_cluster = rdd.join(
@@ -76,6 +86,8 @@ def join_nearest(sc,
         hash_joined = map_ward_or_phash.join(
             sc.pickleFile(hdfs_path(config, 'km', label))
         )
+        # TODO consider whether to persist this intermediate table or
+        # not. It's useful for demonstration, but...
         hash_joined.saveAsPickleFile(
             hdfs_path(config,'candidates', config['candidate_batch'], table + '_full_join')
         )
@@ -93,11 +105,35 @@ def join_nearest(sc,
         as_key_counts.saveAsPickleFile(
                 hdfs_path(config,'candidates', config['candidate_batch'], "%s_key_counts" % path)
             )
+        to_join.append(as_key_counts)
+    # map the candidate id with best match of a hash with indicators of fit
+    def map_best(x):
+        """The key, (best agreeing key, vote count for agreeing, total votes) """
+        (key, ((best_match, agree_count), dict_)) = x
+        return (key, (best_match, agree_count, sum(dict_.values())))
+    
+    # join the ward best key with phash best key
+    joined_final_matches = to_join[0].map(
+                            map_best
+                        ).join(
+                            to_join[1].map(map_best)
+                        )
+    joined_final_matches.saveAsPickleFile(
+            hdfs_path(config, 'candidates',config['candidate_batch'], 'joined_final_matches')
+        )
+    out['joined'] = joined_final_matches.take(config['search_sample_step'])
     return out
 
 
 def find_similar(sc, config):
-    
+    """Use cluster to hash and hash to key 
+    joins to find_similar images.
+
+    TODO: more rounds of search, and have an 
+    option to do ward OR perceptive hash OR both.
+    Ward is more expansive (false positives) than 
+    perceptive hashes, so the join can get slow with many
+    matches.  Maybe ward hashes should be a second try."""
     kmeans_meta = sc.pickleFile(hdfs_path(config, 'km','cluster_center_meta'))
     kmeans_meta = kmeans_meta.map(lambda x:x).collect()
     kPoints, tempDist, within_set_sse = kmeans_meta
@@ -117,7 +153,6 @@ def find_similar(sc, config):
     else:
         scores = sc.pickleFile(config['candidate_measures_spec'])
     for net_round in range(config['search_rounds']):
-        
         samples = join_nearest(sc,
                                 config,
                                 kPoints, 
