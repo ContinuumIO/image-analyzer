@@ -1,5 +1,6 @@
 from __future__ import division, print_function
 import subprocess as sp
+from scipy.ndimage.filters import laplace
 import numpy as np
 import os
 from hdfs_paths import hdfs_path
@@ -7,9 +8,11 @@ def fuzzify(config, fname, hdfs_name):
 	from PIL import Image
 	img = Image.open(fname)
 	n = np.array(img)
-	for _ in range(25):
-		n = n +  sum(np.gradient(n)) * .005
-	new = Image.fromarray(np.array(round(n), dtype=np.uint8))
+	for _ in range(8):
+		for i in range(3):
+			# diffuse the colors some
+			n[:,:,i] = n[:,:,i] + laplace(n[:,:,i]) * .01
+	new = Image.fromarray(np.array(np.round(n), dtype=np.uint8))
 	loc_name = fname + 'fuz'
 	new.save(loc_name,format="png")
 	print(sp.Popen(['hadoop', 

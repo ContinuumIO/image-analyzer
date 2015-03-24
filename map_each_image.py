@@ -107,7 +107,8 @@ def ward_clustering(config, img_flat):
     connectivity = grid_to_graph(*img_flat.shape)
     ward = AgglomerativeClustering(
                 n_clusters=config['ward_clusters'],
-                linkage='ward', 
+                linkage='ward',
+                compute_full_tree = False, 
                 connectivity=connectivity).fit(X)
     ulab = np.unique(ward.labels_)
     out = []
@@ -182,7 +183,7 @@ def load_image(config, image):
     img = Image.open(StringIO(image[1]))
     img_patches = []
     if config.get('patch'):
-        window = [int(wf * sz) for wf,sz in zip(img.size, config['patch']['window_fraction'])]
+        window = [int(wf * sz) for wf,sz in zip(img.size, config['patch']['window_as_fraction'])]
         img_patches=extract_patches_2d(
             np.asarray(img), 
             window, 
@@ -237,12 +238,14 @@ def map_each_image(sc, config, input_spec, output_path):
     img_out.saveAsPickleFile(output_path)
     return img_out
 
-def example(filename):
+def example(filename,config=None):
+    """ For local testing of the image measurements."""
     from StringIO import StringIO
     s = StringIO()
     s.write(open(filename).read())
     image_object = load_image({},(filename,s.getvalue()))
-    output = on_each_image_selection({
+    if config is None:
+        config = {
                 'ward_x_down': 64, 
                 'x_down': 256,
                 'quantiles':(50,),
@@ -250,7 +253,8 @@ def example(filename):
                 'ward_clusters': 5,
                 'kmeans_sample': 2000,
                 'phash_bits': 256
-            },
+            }
+    output = on_each_image_selection(config,
             image_object=image_object[0], 
             metadata={'id': filename})
     return image_object, output

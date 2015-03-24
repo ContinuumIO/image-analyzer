@@ -24,12 +24,16 @@ setup_remote
 
 load_faces94 (){
 	conda cluster submit $CLUSTER  $IMG/fuzzify_training.py --verbose
+	conda cluster submit $CLUSTER  $IMG/hdfs_paths.py --verbose
+
 	conda cluster submit $CLUSTER  $IMG/load_faces94.sh --verbose;
-	rmt "cd /tmp; bash load_faces94.sh" ;
+	rmt "cd /tmp; source load_faces94.sh" ;
 }
 
-# Run this once. 
-load_faces94
+# Run this once if you want the faces94
+# dataset.  You can interrupt it if you 
+# get tired of waiting and use the photos loaded so far.
+ load_faces94
 
 
 # Run each of these file submit commands
@@ -40,9 +44,8 @@ load_faces94
 # that command is available.
 
 conda cluster submit $CLUSTER  $IMG/config.yaml 
-conda cluster submit $CLUSTER  $IMG/hdfs_paths.py --verbose
 conda cluster submit $CLUSTER  $IMG/map_each_image.py --verbose
-
+conda cluster submit $CLUSTER  $IMG/hdfs_paths.py --verbose
 conda cluster submit $CLUSTER  $IMG/search.py --verbose
 
 

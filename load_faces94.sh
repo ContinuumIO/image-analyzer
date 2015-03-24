@@ -11,11 +11,11 @@ unzip faces94
 cd faces94
 hadoop fs -mkdir -p /fuzzy
 hadoop fs -mkdir -p /imgs 
-for line in $(find ./ | grep jpg$ );
+for line in $(find ./ | sort -R | grep jpg$ );
 	do 
 	# clean out slashes and dots
 	no_slash=$(echo $line | sed 's/\///g' | sed 's/\._//g' | sed 's/^\.//');
-	hadoop fs -put ${line} /imgs/$no_slash || echo "Failed in put";
-	python /tmp/fuzzify_training.py $line t1 /fuzzy/ ${no_slash} || echo "Failed";
+	hadoop fs -put ${line} /imgs/$no_slash;
+	python /tmp/fuzzify_training.py $line t1 /fuzzy/ ${no_slash};
 done
 

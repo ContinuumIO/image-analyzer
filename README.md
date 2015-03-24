@@ -21,6 +21,7 @@
 * Clean up system of hdfs pathing so that it is more modular (specific paths can be added to searches, etc)
 * As part of that hdfs path clean up, also do some checks for required paths earlier on in algorithms
 * Analysis of image metadata is not done, but some of the PIL Image data are saved in dict in map_each_image
+* The config.yaml allows for patches to be specified.  The steps in find_similar involving joins on hashes are becoming slow when patches are included.  It may be necessary to break up the patch images from the rest of the analysis to use as a last resort.
 
 ### Pipeline Steps
 * Map the images from spark/hdfs to on_each_image function

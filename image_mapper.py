@@ -11,7 +11,6 @@ import operator
 import sys
 from map_each_image import map_each_image, flatten_hist_cen, phash_chunks
 import search
-from load_data import download_zipped_faces
 from hdfs_paths import hdfs_path, make_hdfs_dirs
 
 
@@ -44,6 +43,8 @@ options_template  = {
         'cluster_to_flattened':True,
         'cluster_to_key': True,
         'cluster_to_phash': True,
+        # TODO it would be more efficient to combine
+        # cluster_to_phash with cluster_to_ward
         'cluster_to_ward': True,
         'flattened_to_cluster': True,
         'flattened_to_key': True,
@@ -228,9 +229,6 @@ if __name__ == "__main__":
     print('started at:::', started)
     actions = config['actions']
     make_hdfs_dirs(config)
-    if 'download' in actions:
-        download_zipped_faces(config)
-        print('download took', datetime.datetime.now() - started)
     if  'map_each_image' in actions:
         map_each_image(sc, config, config['input_spec'], 
                           hdfs_path(config, 'map_each_image', 'measures'))

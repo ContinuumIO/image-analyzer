@@ -57,8 +57,8 @@ def join_nearest(sc,
         best.append(np.argmin(distances))
         return [(x[0], (b, 'self', distances[best[-1]], x[1]['ward'], x[1]['phash'])) for b in best]
     best_clusters = scores.flatMap(_best_cluster)
-    best_clusters.cache()
-    best_clusters.sortBy(lambda x:x[1][2])
+    best_clusters
+    best_clusters.sortBy(lambda x:x[1][2]).cache()
     phash_c = best_clusters.flatMap(
                     partial(cluster_chunk, 
                                 config,
@@ -86,25 +86,20 @@ def join_nearest(sc,
         hash_joined = map_ward_or_phash.join(
             sc.pickleFile(hdfs_path(config, 'km', label))
         )
-        # TODO consider whether to persist this intermediate table or
-        # not. It's useful for demonstration, but...
-        hash_joined.saveAsPickleFile(
-            hdfs_path(config,'candidates', config['candidate_batch'], table + '_full_join')
-        )
         # pulling the two image keys out into pairs
         cand_key_to_key = hash_joined.map(
             lambda x: (x[1][0][1][0][1], x[1][-1])
         )
         samp = cand_key_to_key.take(config['search_sample_step'])
-        path = hdfs_path(config, 'candidates',config['candidate_batch'], table)
         out[table] = samp
         as_key_counts = cand_key_to_key.groupByKey(
             ).map(
             count_keys
             )
+        as_key_counts.cache()
         as_key_counts.saveAsPickleFile(
-                hdfs_path(config,'candidates', config['candidate_batch'], "%s_key_counts" % path)
-            )
+            hdfs_path(config, 'candidates', config['candidate_batch'], "%s_counts" % label)
+        )
         to_join.append(as_key_counts)
     # map the candidate id with best match of a hash with indicators of fit
     def map_best(x):
@@ -152,6 +147,7 @@ def find_similar(sc, config):
                 config['candidate_measures_spec'])
     else:
         scores = sc.pickleFile(config['candidate_measures_spec'])
+    scores.cache()
     for net_round in range(config['search_rounds']):
         samples = join_nearest(sc,
                                 config,
@@ -159,6 +155,6 @@ def find_similar(sc, config):
                                 phash_unions,
                                 ward_unions,
                             scores)
-        from pprint import pformat
-        print(pformat(samples)[:30000])
         
+        #TODO logic here for more rounds of sampling
+    return samples
