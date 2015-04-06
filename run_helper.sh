@@ -53,4 +53,4 @@ conda cluster submit $CLUSTER  $IMG/search.py --verbose
 # Finally, running it, referencing the files above, and 
 # using the settings in config.yaml.
 
-conda cluster submit image_cluster13  $IMG/image_mapper.py --verbose
+conda cluster submit $CLUSTER  $IMG/image_mapper.py --verbose
