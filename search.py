@@ -55,6 +55,7 @@ def join_nearest(sc,
         best = list(map(np.argmax, counts))
         distances = [np.sum((kPoints[i] - flatten_hist_cen(x[1]))**2) for i in range(len(kPoints))]
         best.append(np.argmin(distances))
+        # TODO I think the following line has a typo distances[b] is what is should be.
         return [(x[0], (b, 'self', distances[best[-1]], x[1]['ward'], x[1]['phash'])) for b in best]
     best_clusters = scores.flatMap(_best_cluster)
     best_clusters
