@@ -64,9 +64,11 @@ def join_nearest(sc,
                     partial(cluster_chunk, 
                                 config,
                                 'phash'))
+    phash_c_id = phash_c.map(lambda x:x[1])
     ward_c = best_clusters.flatMap(partial(cluster_chunk, 
                                         config,
                                         'ward'))
+    ward_c_id = ward_c.map(lambda x:x[1])
     cluster_to_phash = sc.pickleFile(hdfs_path(config, 
                                                 'km', 
                                                 'cluster_to_phash'))
@@ -74,19 +76,23 @@ def join_nearest(sc,
                                             'km', 
                                             'cluster_to_ward'))
     rdds = ( ward_c, phash_c)
+    rdds2 = (ward_c_id, phash_c_id)
     table_names = ('ward_matches','phash_matches')
     labels = ('ward_to_key','phash_to_key')
     out = {}
     to_join = []
-    for table, rdd, label in zip(table_names, rdds, labels):
+    for table, rdd, rdd2, label in zip(table_names, rdds, rdds2, labels):
     
         join_on_cluster = rdd.join(
             cluster_to_phash if table == 'phash_matches' else cluster_to_ward
         )
         map_ward_or_phash = join_on_cluster.map(lambda x:(x[1][0][0], x))
+        to_key = sc.pickleFile(hdfs_path(config, 'km', label))
         hash_joined = map_ward_or_phash.join(
-            sc.pickleFile(hdfs_path(config, 'km', label))
+            to_key
         )
+        hash_joined2 = rdd2.join(to_key)
+        print(hash_joined2.collect())
         # pulling the two image keys out into pairs
         cand_key_to_key = hash_joined.map(
             lambda x: (x[1][0][1][0][1], x[1][-1])
