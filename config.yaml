@@ -22,18 +22,18 @@ candidate_has_mapped: False
 # window_as_fraction ---> [x, y] that are multiplied by image size to get window 
 #( window then is an argument for sklearn.feature_extraction.image.extract_patches_2d)
 patch: {
-max_patches: 200,
+max_patches: 4,
 random_state: 0,
-window_as_fraction: [0.25, 0.25]
+window_as_fraction: [0.5, 0.5]
 }
 # For kmeans on one image, perceptive hash, and histogramming,
 # rescale the image to this x pixel count then maintain aspect ratio
-x_down: 256
+x_down: 32
 # For ward clustering on each image, downscale x pixel count
 # to this, then maintain aspect ratio.  (Ward clustering 
 # is significantly slower than the other analyses, so 
 # smaller size helps.)
-ward_x_down: 128
+ward_x_down: 16
 # Perceptive hashes are hex strings in a list
 # phash_chunk_len sets the sub-list length to
 # find tokens with the perceptive hash list of hexes.
@@ -45,19 +45,19 @@ phash_chunk_len: 2
 # The kmeans on the individual image is done on a sample
 # to save time.  This is the max number of pixels to 
 # include there.
-kmeans_sample: 2200
+kmeans_sample: 2000
 # how many kmeans iterations on each individual image
 maxIterations: 15
 # how many kmeans clusters on each image's colors
-n_clusters: 5
+n_clusters: 12
 # how many clusters in the kmeans of all images together
-n_clusters_group: 10
+n_clusters_group: 8
 # ward clusters per image.  Keeping this small 
 # can reduce the size of the join operation at the 
 # find_similar step. (i.e. 1 hash per cluster 
 # per selection per training image joined to 
 # candidates with same.)
-ward_clusters: 15
+ward_clusters: 12
 # how many kmeans iterations in the group  kmeans of all images
 max_iter_group: 10
 # convergence in group kmeans 
@@ -67,7 +67,7 @@ max_iter_group: 10
 kmeans_group_converge: 10000 
 # quantiles to get of each color histogram.  
 # quantiles are a list of 0 to 100 based arguments to np.percentile
-quantiles: [  5, 15, 25, 50, 75, 85, 95]
+quantiles: [5, 15, 25, 50,  75,  95]
 # the reducers do some unions and counting
 # of perceptive hash and ward cluster hash chunks.
 # this sets the number of keys in total

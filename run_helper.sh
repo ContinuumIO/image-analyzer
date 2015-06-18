@@ -3,37 +3,39 @@
 
 # Parameters to set:
 # Where is image_analyzer locally
-IMG=/Users/petersteinberg/Desktop/PeterCode/continuum/image-analyzer
-# what is the cluster name
-export CLUSTER=image_cluster13
+IMG=/Users/psteinberg/Documents/image-analyzer
 # end of parameters
 
 
 
 rmt (){
-	conda cluster run.cmd $CLUSTER "$1";
+	acluster cmd  "$1";
+}
+rmt_head (){
+    acluster cmd "$1" -t head;
 }
 setup_remote (){
-	conda cluster manage $CLUSTER  install PIL  numpy;
-	conda cluster manage $CLUSTER  install scikit-image;
-	conda cluster manage $CLUSTER  install numpy scipy scikit-learn pandas tornado;
+	acluster conda   install PIL  numpy;
+	acluster conda   install scikit-image;
+	acluster conda install  scipy scikit-learn pandas;
 	rmt "apt-get install unzip";
 }
 # Run setup_remote just the first time
-setup_remote
+#setup_remote
 
 load_faces94 (){
-	conda cluster submit $CLUSTER  $IMG/fuzzify_training.py --verbose
-	conda cluster submit $CLUSTER  $IMG/hdfs_paths.py --verbose
+    rmt "mkdir -p /tmp/anaconda-cluster; chown -R ubuntu /tmp/anaconda-cluster";
+	acluster put   $IMG/fuzzify_training.py /tmp/anaconda-cluster/fuzzify_training.py; 
+	acluster put   $IMG/hdfs_paths.py /tmp/anaconda-cluster/hdfs_paths.py;
 
-	conda cluster submit $CLUSTER  $IMG/load_faces94.sh --verbose;
-	rmt "cd /tmp; source load_faces94.sh" ;
+	acluster put   $IMG/load_faces94.sh /tmp/anaconda-cluster/load_faces94.sh;
+#	rmt_head "cd /tmp/anaconda-cluster; source load_faces94.sh" ;
 }
 
 # Run this once if you want the faces94
 # dataset.  You can interrupt it if you 
 # get tired of waiting and use the photos loaded so far.
- load_faces94
+#load_faces94
 
 
 # Run each of these file submit commands
@@ -43,14 +45,14 @@ load_faces94 (){
 # Change these command to use "put" when 
 # that command is available.
 
-conda cluster submit $CLUSTER  $IMG/config.yaml 
-conda cluster submit $CLUSTER  $IMG/map_each_image.py --verbose
-conda cluster submit $CLUSTER  $IMG/hdfs_paths.py --verbose
-conda cluster submit $CLUSTER  $IMG/search.py --verbose
+acluster put   $IMG/config.yaml /tmp/anaconda-cluster/config.yaml 
+acluster put   $IMG/map_each_image.py /tmp/anaconda-cluster/map_each_image.py 
+acluster put   $IMG/hdfs_paths.py /tmp/anaconda-cluster/hdfs_paths.py
+acluster put   $IMG/search.py  /tmp/anaconda-cluster/search.py
 
 
 
 # Finally, running it, referencing the files above, and 
 # using the settings in config.yaml.
 
-conda cluster submit $CLUSTER  $IMG/image_mapper.py --verbose
+acluster submit --stream  $IMG/image_mapper.py 

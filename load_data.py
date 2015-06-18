@@ -17,7 +17,7 @@ import subprocess as sp
 from StringIO import StringIO
 from fuzzify_training import fuzzify
 import os
-utmp = "/tmp/hdfs_tmp/"
+utmp = "/tmp/anaconda-cluster/hdfs_tmp/"
 
 TEST_DATA = 'http://vasc.ri.cmu.edu/idb/images/face/frontal_images/images.tar'
 images_test = os.path.join(utmp, 'images_test')

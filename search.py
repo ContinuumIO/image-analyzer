@@ -92,7 +92,7 @@ def join_nearest(sc,
             to_key
         )
         hash_joined2 = rdd2.join(to_key)
-        print(hash_joined2.collect())
+        
         # pulling the two image keys out into pairs
         cand_key_to_key = hash_joined.map(
             lambda x: (x[1][0][1][0][1], x[1][-1])
