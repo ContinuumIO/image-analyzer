@@ -46,9 +46,9 @@ load_faces94 (){
 # that command is available.
 
 acluster put   $IMG/config.yaml /tmp/anaconda-cluster/config.yaml 
-acluster put   $IMG/map_each_image.py /tmp/anaconda-cluster/map_each_image.py 
-acluster put   $IMG/hdfs_paths.py /tmp/anaconda-cluster/hdfs_paths.py
-acluster put   $IMG/search.py  /tmp/anaconda-cluster/search.py
+#acluster put   $IMG/map_each_image.py /tmp/anaconda-cluster/map_each_image.py 
+#acluster put   $IMG/hdfs_paths.py /tmp/anaconda-cluster/hdfs_paths.py
+#acluster put   $IMG/search.py  /tmp/anaconda-cluster/search.py
 
 
 
