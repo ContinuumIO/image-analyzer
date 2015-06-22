@@ -21,7 +21,7 @@ setup_remote (){
 	rmt "apt-get install unzip";
 }
 # Run setup_remote just the first time
-#setup_remote
+setup_remote
 
 load_faces94 (){
     rmt "mkdir -p /tmp/anaconda-cluster; chown -R ubuntu /tmp/anaconda-cluster";
@@ -29,13 +29,13 @@ load_faces94 (){
 	acluster put   $IMG/hdfs_paths.py /tmp/anaconda-cluster/hdfs_paths.py;
 
 	acluster put   $IMG/load_faces94.sh /tmp/anaconda-cluster/load_faces94.sh;
-#	rmt_head "cd /tmp/anaconda-cluster; source load_faces94.sh" ;
+	rmt_head "cd /tmp/anaconda-cluster; source load_faces94.sh" ;
 }
 
 # Run this once if you want the faces94
 # dataset.  You can interrupt it if you 
 # get tired of waiting and use the photos loaded so far.
-#load_faces94
+load_faces94
 
 
 # Run each of these file submit commands
@@ -46,9 +46,9 @@ load_faces94 (){
 # that command is available.
 
 acluster put   $IMG/config.yaml /tmp/anaconda-cluster/config.yaml 
-#acluster put   $IMG/map_each_image.py /tmp/anaconda-cluster/map_each_image.py 
-#acluster put   $IMG/hdfs_paths.py /tmp/anaconda-cluster/hdfs_paths.py
-#acluster put   $IMG/search.py  /tmp/anaconda-cluster/search.py
+acluster put   $IMG/map_each_image.py /tmp/anaconda-cluster/map_each_image.py 
+acluster put   $IMG/hdfs_paths.py /tmp/anaconda-cluster/hdfs_paths.py
+acluster put   $IMG/search.py  /tmp/anaconda-cluster/search.py
 
 
 
