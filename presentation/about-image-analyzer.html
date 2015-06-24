@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<script src="http://gnab.github.com/remark/downloads/remark-0.4.6.min.js">
+{"highlightStyle": "monokai"}
+</script>
+<script>hljs = remark.highlighter.engine();</script>
+<script src="http://gnab.github.com/remark/remark.language.js">
+</script>
+
+<html>
+  <head><title>Image Analysis &#0169; (With PySpark and Scikit)</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="stylesheet" href="presentation.css"> 
+    <style type="text/css">
+      @import url(http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+      body { font-family: 'Droid Serif'; font-size: 18px; }
+      h1{
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: bold;
+      }
+      h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      
+      ul {
+        list-style: none;
+        list-style-type: circle;
+      }
+      li {
+        font-family: "Yanone Kaffeesatz";
+        font-weight: normal;
+        font-size: 26px;
+      }
+      textarea {
+        margin-top: 5px;
+        margin-bottom: 5px;
+        position: relative;
+        width: 95%;
+        min-height: 95%;
+      }
+      img{
+        margin:20px;
+      }
+      .problem_steps {
+        font-size: 25px;
+      }
+/* Two-column layout */
+      .left-column {
+        width: 50%;
+        float: left;
+      }
+      .right-column {
+        width: 50%;
+        float: right;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      kbd {
+        width:115px;
+        
+        border-style: solid;
+        border-color: #ccc #aaa #888 #bbb;
+        padding: 0px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+        font-family: 'Helvetica Neue',Helvetica,Arial,sans-serif;
+        background: rgba(255,255,255,1);
+        background-color: #f7f7f7;
+        color: #333;
+        -moz-box-shadow: 0 1px 0 rgba(0,0,0,0.2),0 0 0 2px #fff inset;
+        -webkit-box-shadow: 0 1px 0 rgba(0,0,0,0.2),0 0 0 2px #fff inset;
+        box-shadow: 0 1px 0 rgba(0,0,0,0.2),0 0 0 2px #fff inset;
+        border-radius: 3px;
+        display: inline-block;
+        margin: 0px;
+        text-shadow: 0 1px 0 #fff;
+        line-height: 1.18;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-collapse: collapse;
+        border-spacing: 0;
+        border-spacing: 2px;
+border-color: gray
+      }
+      .pareto {
+        color:rgba(0,0,255,.8);
+      }
+      .footnote {
+        font-size: 15px;
+        width:80%;
+      }
+      .equation {
+        font-size:20px;
+        font-weight:bold italic;
+        color: #964809; /* brownish complimentary (sp?) or something*/
+      }
+      .logo {
+        width:180px;
+        margin-left: 80%;
+      }
+    </style>
+  </head>
+  <body>
+<a name=1></a>
+    <textarea id="source">
+
+<img style="margin-left:35%;width:30%;" src="continuum_analytics_logo.png"></img>
+# Image Analysis with PySpark / Scikit
+
+<img style="margin-left:60%;margin-top:150px;width:30%;" src="anaconda_cluster_picture.png"></img>
+
+
+---
+
+<img class="logo" src="continuum_analytics_logo.png"></img>
+# Build an image analysis example using
+ * ## PySpark
+ * ## Scikit-learn and scikit-image
+
+# Show how these tools work together
+# Try deployment with Anaconda cluster
+
+---
+
+<img class="logo" src="continuum_analytics_logo.png"></img>
+
+# Image analysis example
+ * Try to match images with similar images seen before 
+ * The end goal is to line up alike images, as seen [here](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb#matches)
+#### (Using the [Libor Spacek face dataset](http://cswww.essex.ac.uk/mv/allfaces/faces94.html))
+
+---
+
+<img class="logo" src="continuum_analytics_logo.png"></img>
+
+# Helpful links with this image analysis example
+ * [github repo](https://github.com/ContinuumIO/image-analyzer/)
+ * [nbviewer ipython notebook](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb)
+
+---
+
+<img class="logo" src="continuum_analytics_logo.png"></img>
+
+# Steps of this image analysis example
+ * Run measurements on each image (scikit)
+ * Do clustering among images to find groups with similar colors or hashes (PySpark)
+ * Join the hashes and clusters of groups of images (PySpark)
+
+---
+
+<img class="logo" src="continuum_analytics_logo.png"></img>
+
+# Measurements on each image
+ * K-means clustering: K-means is an unsupervised classification method to find centroids colors in the images.
+ * Scikit-learn is used, as seen in this color quantization example [http://scikit-learn.org/stable/auto_examples/cluster/plot_color_quantization.html](http://scikit-learn.org/stable/auto_examples/cluster/plot_color_quantization.html)
+
+---
+
+<img class="logo" src="continuum_analytics_logo.png"></img>
+
+# Measurements on each image
+ * Ward clustering: unsupervised hierarchical classification finding clusters of pixels in images similar in color and contiguous in space.
+ * Seen in the clustering Lena image example: [http://scikit-learn.org/stable/auto_examples/cluster/plot_lena_ward_segmentation.html](http://scikit-learn.org/stable/auto_examples/cluster/plot_lena_ward_segmentation.html)
+
+---
+
+<img class="logo" src="continuum_analytics_logo.png"></img>
+
+# Measurements on each image 
+ * Perceptive hashes: 1’s indicate a pixel’s grayscale value is darker than the mean value, 0's elsewhere as describe on this [related hacker factor blog](http://www.hackerfactor.com/blog/?/archives/432-Looks-Like-It.html)
+ * Histogramming: Saving some of the percentiles of each color. 
+
+---
+
+<img class="logo" src="continuum_analytics_logo.png"></img>
+
+# Measurements on each image
+ * The measurement data are saved in dictionaries in a spark RDD
+ * Can subsequently map any of the measurements
+ * Can inspect the data via ipython notebook queries of RDD
+---
+
+
+<img class="logo" src="continuum_analytics_logo.png"></img>
+
+# After mapping the images through scikit image/learn tools
+ * Run a larger K-means on the results from each image (group similar images in a larger K-means algorithm)
+ * Uses each image's centriods and histograms as input vectors in the larger K-means.
+ * Find the most common Ward clusters and perceptive hashes in each K-means cluster of images
+#### [K-means with hash counting in PySpark](https://github.com/ContinuumIO/image-analyzer/blob/master/image_mapper.py) 
+
+---
+
+<img class="logo" src="continuum_analytics_logo.png"></img>
+
+# When comparing images against the database
+ * Join based on Ward cluster similarity,
+ * Join based on perceptive hashes, or
+ * Join based on K-means cluster
+#### See [search.py](https://github.com/ContinuumIO/image-analyzer/blob/master/search.py)
+
+---
+
+<img class="logo" src="anaconda_cluster_logo.png"></img>
+
+# Dev-ops details
+ * Used [Anaconda cluster](http://continuumio.github.io/anaconda-cluster/overview.html) to deploy PySpark cluster with scikit and numpy
+
+---
+
+<img class="logo" src="anaconda_cluster_logo.png"></img>
+
+# Anaconda cluster steps
+ * Set up a [providers.yaml file](http://continuumio.github.io/anaconda-cluster/overview.html#provider-setup)
+ * Set up a cluster profile, like this YAML file for a spark cluster
+
+<pre>
+<code>
+spark_profile:
+  provider: aws_east
+  num_nodes: 2
+  node_id: ami-a29943cb
+  node_type: m3.xlarge
+  user: ubuntu
+  plugins:
+    - spark-yarn
+    - notebook
+</code>
+</pre>
+
+---
+
+<img class="logo" src="anaconda_cluster_logo.png"></img>
+
+# Start a cluster
+ * With Anaconda cluster
+
+<pre>
+<code>
+    acluster create spark-cluster --profile spark_profile
+</code>
+
+
+---
+
+<img class="logo" src="continuum_analytics_logo.png"></img>
+
+# Running image-analyzer example after cluster set up
+
+* Adjust settings for each step of analysis in [config yaml file](https://github.com/ContinuumIO/image-analyzer/blob/master/config.yaml)
+* Use [run_helper.sh bash script](https://github.com/ContinuumIO/image-analyzer/blob/master/run_helper.sh).  
+ * Install numpy and scikit on the cluster
+ * Download example images dataset
+ * Map each image through measurements
+ * Do K-means and hash counting on images together
+ * Search for matches in a pool of new images
+
+<pre>
+<code>
+. run_helper.sh
+</code>
+</pre>
+
+---
+
+<img class="logo" src="continuum_analytics_logo.png"></img>
+
+# While image-analyzer runs, monitor it in the browser with:
+ * Ipython notebook: 1.2.3.4:8888
+ * WebHDFS file browser: 1.2.3.4:50070
+ * YARN spark cluster monitor: 1.2.3.4:9026
+#### (replace 1.2.3.4 with your head node's IP)
+
+---
+<img class="logo" src="continuum_analytics_logo.png"></img>
+
+# Inspecting results after model run
+ * Do some smaller PySpark queries in [the ipython notebook](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb#matches)
+
+---
+
+# Questions?
+
+## Peter Steinberg 
+
+<b style="font-size:18px;">psteinberg@continuum.io</b>
+
+</textarea>
+<div id="slideshow"></div>
+</body>
+
+</html>
