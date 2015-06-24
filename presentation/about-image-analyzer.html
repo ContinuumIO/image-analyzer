@@ -153,7 +153,7 @@ border-color: gray
 
 # Measurements on each image
  * K-means clustering: K-means is an unsupervised classification method to find centroids colors in the images.
- * Scikit-learn is used, as seen in this color quantization example [http://scikit-learn.org/stable/auto_examples/cluster/plot_color_quantization.html](http://scikit-learn.org/stable/auto_examples/cluster/plot_color_quantization.html)
+ * Scikit-learn is used, as seen in this [color quantization example](http://scikit-learn.org/stable/auto_examples/cluster/plot_color_quantization.html)
 
 ---
 
@@ -161,7 +161,7 @@ border-color: gray
 
 # Measurements on each image
  * Ward clustering: unsupervised hierarchical classification finding clusters of pixels in images similar in color and contiguous in space.
- * Seen in the clustering Lena image example: [http://scikit-learn.org/stable/auto_examples/cluster/plot_lena_ward_segmentation.html](http://scikit-learn.org/stable/auto_examples/cluster/plot_lena_ward_segmentation.html)
+ * Seen in the clustering [Lena image example](http://scikit-learn.org/stable/auto_examples/cluster/plot_lena_ward_segmentation.html)
 
 ---
 
@@ -212,8 +212,26 @@ border-color: gray
 <img class="logo" src="anaconda_cluster_logo.png"></img>
 
 # Anaconda cluster steps
- * Set up a [providers.yaml file](http://continuumio.github.io/anaconda-cluster/overview.html#provider-setup)
- * Set up a cluster profile, like this YAML file for a spark cluster
+ * Set up a [providers.yaml](http://continuumio.github.io/anaconda-cluster/overview.html#provider-setup) file like this
+ 
+<code>
+<pre>
+aws_east:
+    cloud_provider: ec2
+    secret_id: XXXXXXXXXXXXX
+    secret_key: XXXXXXXXXXXXX
+    keyname: KEY-NAME-ON-AWS
+    private_key: FULL-PATH-LOCAL-KEYFILE
+    location:  us-east-1
+</pre>
+</code>
+
+---
+
+<img class="logo" src="anaconda_cluster_logo.png"></img>
+
+# Anaconda cluster steps
+ * Set up a [cluster profile](http://continuumio.github.io/anaconda-cluster/overview.html#profile-setup), like this YAML file for a spark cluster
 
 <pre>
 <code>
@@ -248,12 +266,12 @@ spark_profile:
 
 # Running image-analyzer example after cluster set up
 
-* Adjust settings for each step of analysis in [config yaml file](https://github.com/ContinuumIO/image-analyzer/blob/master/config.yaml)
-* Use [run_helper.sh bash script](https://github.com/ContinuumIO/image-analyzer/blob/master/run_helper.sh).  
- * Install numpy and scikit on the cluster
- * Download example images dataset
- * Map each image through measurements
- * Do K-means and hash counting on images together
+* Adjust settings for each step of analysis in [YAML config file](https://github.com/ContinuumIO/image-analyzer/blob/master/config.yaml)
+* Use the [run_helper.sh](https://github.com/ContinuumIO/image-analyzer/blob/master/run_helper.sh) in order to:  
+ * Install numpy and scikit on the cluster,
+ * Download example images dataset,
+ * Map each image through measurements,
+ * Do K-means and hash counting on images together, and/or
  * Search for matches in a pool of new images
 
 <pre>
@@ -276,10 +294,11 @@ spark_profile:
 <img class="logo" src="continuum_analytics_logo.png"></img>
 
 # Inspecting results after model run
- * Do some smaller PySpark queries in [the ipython notebook](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb#matches)
+ * Use [the ipython notebook](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb#matches) to explore the results
 
 ---
 
+<img style="width:30%;margin-left:35%;" src="continuum_analytics_logo.png"></img>
 # Questions?
 
 ## Peter Steinberg 
@@ -287,7 +306,7 @@ spark_profile:
 <b style="font-size:18px;">psteinberg@continuum.io</b>
 
 </textarea>
-<div id="slideshow"></div>
+<div id="slideshow" style="background:linear-gradient(to bottom right, rgba(160,182,200,1) , rgba(255,255,255,1));"></div>
 </body>
 
 </html>
