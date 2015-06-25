@@ -5,7 +5,7 @@
 * Kmeans of the colors within 1 standardized image. Output the image's centroids.
 * Perceptive hash of standardized image.  Hashed in chunks.
 * PCA factors and variance.
-* Ward clustering <a>http://scikit-learn.org/stable/auto_examples/cluster/plot_lena_ward_segmentation.html>as described here </a>
+* Ward clustering, as described [here](http://scikit-learn.org/stable/auto_examples/cluster/plot_lena_ward_segmentation.html).
 
 * Images are analyzed in full and in quadrants
 
