@@ -213,28 +213,33 @@ border-color: gray
 'pca_fac': [...principal component factors...]})
 ```
 ---
- * Measurements on each image can be tested locally or in PySpark
+ * Measurements on each image are embarassingly parallel and can be tested locally before running in PySpark
+
 ```python
-def example(filename,config=None):
-    """ For local testing of the image measurements."""
+    from map_each_image import on_each_image_selection
     from StringIO import StringIO
-    s = StringIO()
-    s.write(open(filename).read())
-    image_object = load_image({},(filename,s.getvalue()))
-    if config is None:
-        config = {
-                'ward_x_down': 64, 
-                'x_down': 256,
-                'quantiles':(50,),
-                'n_clusters': 5,
-                'ward_clusters': 5,
-                'kmeans_sample': 2000,
-                'phash_bits': 256
-            }
-    output = on_each_image_selection(config,
-            image_object=image_object[0], 
-            metadata={'id': filename})
-    return image_object, output
+    from PIL import Image
+    import numpy as np
+    image = open('presentation/2b.png').read()
+    image_object =  np.array(Image.open(StringIO(image)), dtype=np.uint8)
+    config = {
+            'ward_x_down': 64, 
+            'x_down': 256,
+            'quantiles':(50,),
+            'n_clusters': 5,
+            'ward_clusters': 5,
+            'kmeans_sample': 2000,
+            'phash_bits': 256,
+        }
+
+    image_dict = on_each_image_selection(config,
+            image_object=image_object, # from PIL as np.array
+            metadata={'id': 'example_1'})
+
+
+    print image_dict.keys()
+
+    \# prints: ['phash', 'histo', 'cen', 'ward', 'pca_fac', 'pca_var', 'id']
 ```
 ---
 
