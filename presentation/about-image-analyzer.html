@@ -7,7 +7,7 @@
 </script>
 
 <html>
-  <head><title>Image Analysis &#0169; (With PySpark and Scikit)</title>
+  <head><title>Image Analysis (PySpark and Scikit)</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <link rel="stylesheet" href="presentation.css"> 
     <style type="text/css">
@@ -41,7 +41,7 @@
         min-height: 95%;
       }
       img{
-        margin:20px;
+        margin:2px;
       }
       .problem_steps {
         font-size: 25px;
@@ -99,13 +99,20 @@ border-color: gray
         width:180px;
         margin-left: 80%;
       }
+      .logo2 {
+        width:55px;
+        margin-left: 80%;
+      }
+      .thumbs {
+        width:250px;
+      }
     </style>
   </head>
   <body>
 <a name=1></a>
     <textarea id="source">
 
-<img style="margin-left:35%;width:30%;" src="continuum_analytics_logo.png"></img>
+<img style="margin-left:35%;width:30%;" src="Anaconda_Logo_0702.png"></img>
 # Image Analysis with PySpark / Scikit
 
 <img style="margin-left:60%;margin-top:150px;width:30%;" src="anaconda_cluster_picture.png"></img>
@@ -113,7 +120,7 @@ border-color: gray
 
 ---
 
-<img class="logo" src="continuum_analytics_logo.png"></img>
+<img class="logo" src="Continuum_Logo_0702.png"></img>
 # Build an image analysis example using
  * ## PySpark
  * ## Scikit-learn and scikit-image
@@ -123,41 +130,55 @@ border-color: gray
 
 ---
 
-<img class="logo" src="continuum_analytics_logo.png"></img>
+<img class="logo" src="Continuum_Logo_0702.png"></img>
 
 # Image analysis example
  * Try to match images with similar images seen before 
- * The end goal is to line up alike images, as seen [here](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb#matches)
-#### (Using the [Libor Spacek face dataset](http://cswww.essex.ac.uk/mv/allfaces/faces94.html))
+ * The end goal is to line up alike images, like this:
+
+
+
+<img src="1a.png" style="float:left" class="thumbs">
+<br><br>
+<img src="2a.png" style="float:left" class="thumbs">
+<br><br>
+<img src="3a.png" style="float:left" class="thumbs">
+
 
 ---
 
-<img class="logo" src="continuum_analytics_logo.png"></img>
+<img class="logo" src="Continuum_Logo_0702.png"></img>
 
 # Helpful links with this image analysis example
  * [github repo](https://github.com/ContinuumIO/image-analyzer/)
  * [nbviewer ipython notebook](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb)
-
+ 
 ---
 
-<img class="logo" src="continuum_analytics_logo.png"></img>
+<img class="logo" src="Continuum_Logo_0702.png"></img>
 
 # Steps of this image analysis example
- * Run measurements on each image (scikit)
+ * Put each image on the hadoop distributed file system
+
+```bash
+    hadoop fs -put some_image_file.jpg /imgs/some_image_file.jpg
+```
+
+ * Run measurements on each image (PySpark parallel use of scikit)
  * Do clustering among images to find groups with similar colors or hashes (PySpark)
  * Join the hashes and clusters of groups of images (PySpark)
 
 ---
 
-<img class="logo" src="continuum_analytics_logo.png"></img>
+<img class="logo" src="Continuum_Logo_0702.png"></img>
 
 # Measurements on each image
- * K-means clustering: K-means is an unsupervised classification method to find centroids colors in the images.
+ * K-means clustering: K-means is an unsupervised classification method to find centroid colors in the images.
  * Scikit-learn is used, as seen in this [color quantization example](http://scikit-learn.org/stable/auto_examples/cluster/plot_color_quantization.html)
 
 ---
 
-<img class="logo" src="continuum_analytics_logo.png"></img>
+<img class="logo" src="Continuum_Logo_0702.png"></img>
 
 # Measurements on each image
  * Ward clustering: unsupervised hierarchical classification finding clusters of pixels in images similar in color and contiguous in space.
@@ -165,7 +186,7 @@ border-color: gray
 
 ---
 
-<img class="logo" src="continuum_analytics_logo.png"></img>
+<img class="logo" src="Continuum_Logo_0702.png"></img>
 
 # Measurements on each image 
  * Perceptive hashes: 1’s indicate a pixel’s grayscale value is darker than the mean value, 0's elsewhere as describe on this [related hacker factor blog](http://www.hackerfactor.com/blog/?/archives/432-Looks-Like-It.html)
@@ -173,16 +194,51 @@ border-color: gray
 
 ---
 
-<img class="logo" src="continuum_analytics_logo.png"></img>
+<img class="logo" src="Continuum_Logo_0702.png"></img>
 
 # Measurements on each image
  * The measurement data are saved in dictionaries in a spark RDD
  * Can subsequently map any of the measurements
  * Can inspect the data via ipython notebook queries of RDD
+ * Each record in RDD is a (filename, measurements dictionary) tuple, like this:
+ 
+```python
+(u'hdfs://ip-10-123-209-104:9000/imgs/femalevstrosvstros.17.jpg', 
+{'cen': [...centroids array...], 
+'pca_var': [...principal component variance array...], 
+'meta': {...image metadata...}, 
+'phash': [...perceptive hashes of chunks...], 
+'histo': [...histogram of colors...], 
+'ward': [...ward cluster geometry hashes...], 
+'pca_fac': [...principal component factors...]})
+```
+---
+ * Measurements on each image can be tested locally or in PySpark
+```python
+def example(filename,config=None):
+    """ For local testing of the image measurements."""
+    from StringIO import StringIO
+    s = StringIO()
+    s.write(open(filename).read())
+    image_object = load_image({},(filename,s.getvalue()))
+    if config is None:
+        config = {
+                'ward_x_down': 64, 
+                'x_down': 256,
+                'quantiles':(50,),
+                'n_clusters': 5,
+                'ward_clusters': 5,
+                'kmeans_sample': 2000,
+                'phash_bits': 256
+            }
+    output = on_each_image_selection(config,
+            image_object=image_object[0], 
+            metadata={'id': filename})
+    return image_object, output
+```
 ---
 
-
-<img class="logo" src="continuum_analytics_logo.png"></img>
+<img class="logo" src="Continuum_Logo_0702.png"></img>
 
 # After mapping the images through scikit image/learn tools
  * Run a larger K-means on the results from each image (group similar images in a larger K-means algorithm)
@@ -192,27 +248,125 @@ border-color: gray
 
 ---
 
-<img class="logo" src="continuum_analytics_logo.png"></img>
+<img class="logo" src="Continuum_Logo_0702.png"></img>
 
 # When comparing images against the database
  * Join based on Ward cluster similarity,
  * Join based on perceptive hashes, or
  * Join based on K-means cluster
+ * Create RDD's for joining and lookups, like this mapping of ward cluster hash to file name:
+```python
+(-5013803343762532022,
+  'hdfs://ip-10-123-209-104:9000/imgs/femalegotoneelduns.jpg')
+```
 #### See [search.py](https://github.com/ContinuumIO/image-analyzer/blob/master/search.py)
+ 
+---
+
+<img class="logo" src="Continuum_Logo_0702.png"></img>
+
+# Joining new and old images based on a hash
+
+ * PySpark joins are like this:
+
+```python
+candidate_hashes.fullOuterJoin(old_hashes)
+```
+ * And that joins new and old image tuples like this:
+
+```python
+old_image=(-5013803343762532022,
+  'hdfs://ip-10-123-209-104:9000/imgs/femalegotoneelduns.jpg')
+new_image=(-5013803343762532022,
+  'hdfs://ip-10-123-209-104:9000/fuzzy/femalegotoneelduns.jpg')
+
+```
 
 ---
 
-<img class="logo" src="anaconda_cluster_logo.png"></img>
+<img class="logo" src="Continuum_Logo_0702.png"></img>
+
+# After the joins we have an RDD of tuples like this for images that share a hash
+
+```python
+(-5013803343762532022, 
+    ('hdfs://ip-10-123-209-104:9000/imgs/femalegotoneelduns.jpg',
+     'hdfs://ip-10-123-209-104:9000/fuzzy/femalegotoneelduns.jpg')
+)
+```
+* Next we need to vote count those tuples
+
+---
+<img class="logo" src="Continuum_Logo_0702.png"></img>
+# A vote count to find the best agreement
+ * Group by hash then count the values at each key
+
+```python
+grouped = candidate_hashes.fullOuterJoin(old_hashes).groupByKey()
+def count_keys(x):
+    counts = {}
+    for u in x[1]:
+        if u in counts:
+            counts[u] +=  1
+        else:
+            counts[u] = 1
+    best = sorted(counts.items(), key=lambda x:-x[1])[0]
+    return (x[0], (best, counts))
+
+vote_counts = grouped.reduce(count_keys)
+```
+---
+<img class="logo" src="Continuum_Logo_0702.png"></img>
+# Ending up with a vote counts dictionary for each candidate image
+
+```python
+(u'hdfs://ip-10-123-209-104:9000/fuzzy/male93384629338462.10.jpg',
+ ((u'hdfs://ip-10-123-209-104:9000/imgs/male93384629338462.10.jpg', 40670),
+  {u'hdfs://ip-10-123-209-104:9000/imgs/femalegotoneelduns.jpg': 19040,
+   u'hdfs://ip-10-123-209-104:9000/imgs/femalevstrosvstros.17.jpg': 7840,
+   u'hdfs://ip-10-123-209-104:9000/imgs/male93384629338462.10.jpg': 40670,
+   u'hdfs://ip-10-123-209-104:9000/imgs/male93384899338489.19.jpg': 25760,
+   u'hdfs://ip-10-123-209-104:9000/imgs/maleajflemajflem.5.jpg': 33600,
+   u'hdfs://ip-10-123-209-104:9000/imgs/maledcbowedcbowe.20.jpg': 8400,
+   u'hdfs://ip-10-123-209-104:9000/imgs/malegdhatcgdhatc.20.jpg': 7840,
+   u'hdfs://ip-10-123-209-104:9000/imgs/maleggregoggrego.1.jpg': 3360,
+   u'hdfs://ip-10-123-209-104:9000/imgs/malejabinsjabins.5.jpg': 11200,
+   u'hdfs://ip-10-123-209-104:9000/imgs/malesaduahsaduah.11.jpg': 9520,
+   u'hdfs://ip-10-123-209-104:9000/imgs/malestaffmoorsmoors.13.jpg': 9520,
+   u'hdfs://ip-10-123-209-104:9000/imgs/malestaffmoorsmoors.14.jpg': 17920,
+   u'hdfs://ip-10-123-209-104:9000/imgs/malestaffobeidnobeidn.14.jpg': 33040,
+   u'hdfs://ip-10-123-209-104:9000/imgs/malesvkrizsvkriz.17.jpg': 10640}))
+```
+---
+
+<img class="logo" src="Continuum_Logo_0702.png"></img>
+
+# While image-analyzer runs, monitor it in the browser with:
+ * Ipython notebook: 1.2.3.4:8888
+ * WebHDFS file browser: 1.2.3.4:50070
+ * YARN spark cluster monitor: 1.2.3.4:9026
+#### (replace 1.2.3.4 with your head node's IP)
+
+---
+<img class="logo" src="Continuum_Logo_0702.png"></img>
+
+# Inspecting results after model run
+ * Use [the ipython notebook](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb#matches) to explore the results
+
+
+
+---
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
 
 # Dev-ops details
- * Used [Anaconda cluster](http://continuumio.github.io/anaconda-cluster/overview.html) to deploy PySpark cluster with scikit and numpy
+ * Used [Anaconda cluster](http://docs.continuum.io/anaconda-cluster/overview.html) to deploy PySpark cluster with scikit and numpy
 
 ---
 
-<img class="logo" src="anaconda_cluster_logo.png"></img>
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
 
 # Anaconda cluster steps
- * Set up a [providers.yaml](http://continuumio.github.io/anaconda-cluster/overview.html#provider-setup) file like this
+ * Set up a [providers.yaml](http://docs.continuum.io/anaconda-cluster/overview.html#provider-setup) file like this
  
 <code>
 <pre>
@@ -228,10 +382,10 @@ aws_east:
 
 ---
 
-<img class="logo" src="anaconda_cluster_logo.png"></img>
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
 
 # Anaconda cluster steps
- * Set up a [cluster profile](http://continuumio.github.io/anaconda-cluster/overview.html#profile-setup), like this YAML file for a spark cluster
+ * Set up a [cluster profile](http://docs.continuum.io/anaconda-cluster/overview.html#profile-setup), like this YAML file for a spark cluster
 
 <pre>
 <code>
@@ -249,7 +403,7 @@ spark_profile:
 
 ---
 
-<img class="logo" src="anaconda_cluster_logo.png"></img>
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
 
 # Start a cluster
  * With Anaconda cluster
@@ -259,10 +413,49 @@ spark_profile:
     acluster create spark-cluster --profile spark_profile
 </code>
 
+---
+
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
+
+# Working with Anaconda cluster
+
+ * Push a file(s) to all the nodes of cluster
+ <pre><code>
+     acluster put some_file.py /tmp/some_file.py --target --all
+ </code></pre>
+ * Install python dependencies
+ <pre><code>
+ acluster conda install  scipy scikit-learn pandas
+ </code></pre>
+ * Submit a job for running by Spark master
+ <pre><code>
+    acluster submit --stream  image_mapper.py
+</code></pre>
+ * Run a remote command on some or all nodes:
+ <pre><code>
+    acluster cmd "ls /tmp" --target --all
+ </code></pre>
+---
+
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
+
+# Anaconda cluster supports a number of plugins, not just PySpark
+ * Miniconda
+ * Ganglia\*
+ * HDFS
+ * HIVE\*
+ * Impala\*
+ * IPython/Jupyter Notebook
+ * IPython Parallel\*
+ * Salt
+ * Spark Standalone or Yarn
+ * YARN
+ * ZooKeeper
+\* alpha support
 
 ---
 
-<img class="logo" src="continuum_analytics_logo.png"></img>
+<img class="logo" src="Continuum_Logo_0702.png"></img>
 
 # Running image-analyzer example after cluster set up
 
@@ -282,23 +475,7 @@ spark_profile:
 
 ---
 
-<img class="logo" src="continuum_analytics_logo.png"></img>
-
-# While image-analyzer runs, monitor it in the browser with:
- * Ipython notebook: 1.2.3.4:8888
- * WebHDFS file browser: 1.2.3.4:50070
- * YARN spark cluster monitor: 1.2.3.4:9026
-#### (replace 1.2.3.4 with your head node's IP)
-
----
-<img class="logo" src="continuum_analytics_logo.png"></img>
-
-# Inspecting results after model run
- * Use [the ipython notebook](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb#matches) to explore the results
-
----
-
-<img style="width:30%;margin-left:35%;" src="continuum_analytics_logo.png"></img>
+<img style="width:30%;margin-left:35%;" src="Continuum_Logo_0702.png"></img>
 # Questions?
 
 ## Peter Steinberg 
