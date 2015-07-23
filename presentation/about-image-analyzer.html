@@ -412,9 +412,8 @@ spark_profile:
 
 # Start a cluster
  * With Anaconda cluster
-
 <pre>
-<code>
+<code class="bash">
     acluster create spark-cluster --profile spark_profile
 </code>
 
@@ -425,23 +424,110 @@ spark_profile:
 # Working with Anaconda cluster
 
  * Push a file(s) to all the nodes of cluster
- <pre><code>
+ <pre><code class="bash">
      acluster put some_file.py /tmp/some_file.py --target --all
  </code></pre>
- * Install python dependencies
- <pre><code>
- acluster conda install  scipy scikit-learn pandas
- </code></pre>
- * Submit a job for running by Spark master
- <pre><code>
-    acluster submit --stream  image_mapper.py
-</code></pre>
- * Run a remote command on some or all nodes:
- <pre><code>
-    acluster cmd "ls /tmp" --target --all
- </code></pre>
+
 ---
 
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
+
+# Working with Anaconda cluster
+
+ * Get files from specific workers
+ <pre><code class="bash">
+acluster get /tmp/some_file.txt some_file_0.txt --target 0
+acluster get /tmp/some_file.txt some_file_1.txt --target 1
+ </code></pre>
+
+---
+
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
+
+# Working with Anaconda cluster
+
+ * Conda install python dependencies and list what is installed
+ <pre><code class="bash">
+    acluster conda install  scipy scikit-learn pandas
+    acluster conda list
+ </code></pre>
+
+---
+
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
+
+# Working with Anaconda cluster
+
+ * Submit a job for running by Spark master
+ <pre><code class="bash">
+    acluster submit --stream  image_mapper.py
+</code></pre>
+
+
+---
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
+
+# Working with Anaconda cluster
+
+ * Run a remote command on some or all nodes:
+ <pre><code class="bash">
+    acluster cmd "ls /tmp" --target --all
+ </code></pre>
+
+---
+
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
+
+# Working with Anaconda cluster
+ * Get a list of the clusters running
+<pre><code class="bash">
+acluster list
+</code></pre>
+<pre><code>
+spark-cluster:
+  nodes:
+  \- 54.237.113.188 (head)
+  \- 54.237.86.244
+</code></pre>
+---
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
+
+# Working with Anaconda cluster
+ * Get the metadata for a specific cluster
+<pre><code class="bash">
+cat ~/.acluster/clusters.d/spark-cluster.yaml
+</code></pre>
+<pre><code class="bash">
+spark-cluster:
+  created_at: '2015-07-23 08:54:05'
+  ids:
+  \- i-393cbed0
+  \- i-3a3cbed3
+  machines:
+    compute:
+    \- 54.237.86.244
+    head:
+    \- 54.237.113.188
+  private_key: ~/.ssh/psteinberg2.pem
+  profile: spark_profile
+  provider: aws_east
+  user: ubuntu
+</code></pre>
+---
+
+<img class="logo2" src="anaconda_cluster_logo.png"></img>
+
+# Working with Anaconda cluster
+ * Shutdown the cluster
+<pre><code class="bash">
+acluster destroy spark-cluster
+</code></pre>
+<pre><code class="bash">
+Are you sure you want to destroy cluster "spark-cluster"? [y/N]: y
+INFO: Cluster "spark-cluster" destroyed
+Cluster destroyed
+</code></pre>
+---
 <img class="logo2" src="anaconda_cluster_logo.png"></img>
 
 # Anaconda cluster supports a number of plugins, not just PySpark

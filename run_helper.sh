@@ -1,10 +1,6 @@
 # These are some commands that helped with deployment when all files need to be sent
 
 
-# Parameters to set:
-# Where is image_analyzer locally
-IMG=/Users/psteinberg/Documents/image-analyzer
-# end of parameters
 
 
 
@@ -25,10 +21,10 @@ setup_remote
 
 load_faces94 (){
     rmt "mkdir -p /tmp/anaconda-cluster; chown -R ubuntu /tmp/anaconda-cluster";
-	acluster put   $IMG/fuzzify_training.py /tmp/anaconda-cluster/fuzzify_training.py; 
-	acluster put   $IMG/hdfs_paths.py /tmp/anaconda-cluster/hdfs_paths.py;
+	acluster put   fuzzify_training.py /tmp/anaconda-cluster/fuzzify_training.py; 
+	acluster put   hdfs_paths.py /tmp/anaconda-cluster/hdfs_paths.py;
 
-	acluster put   $IMG/load_faces94.sh /tmp/anaconda-cluster/load_faces94.sh;
+	acluster put   load_faces94.sh /tmp/anaconda-cluster/load_faces94.sh;
 	rmt_head "cd /tmp/anaconda-cluster; source load_faces94.sh" ;
 }
 
@@ -45,14 +41,14 @@ load_faces94
 # Change these command to use "put" when 
 # that command is available.
 
-acluster put   $IMG/config.yaml /tmp/anaconda-cluster/config.yaml 
-acluster put   $IMG/map_each_image.py /tmp/anaconda-cluster/map_each_image.py 
-acluster put   $IMG/hdfs_paths.py /tmp/anaconda-cluster/hdfs_paths.py
-acluster put   $IMG/search.py  /tmp/anaconda-cluster/search.py
+acluster put   config.yaml /tmp/anaconda-cluster/config.yaml 
+acluster put   map_each_image.py /tmp/anaconda-cluster/map_each_image.py 
+acluster put   hdfs_paths.py /tmp/anaconda-cluster/hdfs_paths.py
+acluster put   search.py  /tmp/anaconda-cluster/search.py
 
 
 
 # Finally, running it, referencing the files above, and 
 # using the settings in config.yaml.
 
-acluster submit --stream  $IMG/image_mapper.py 
+acluster submit --stream  image_mapper.py 
