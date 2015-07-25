@@ -113,7 +113,8 @@ border-color: gray
     <textarea id="source">
 
 <img style="margin-left:35%;width:30%;" src="Anaconda_Logo_0702.png"></img>
-# Image Analysis with PySpark / Scikit
+# Image Analysis with PySpark / Scikit-learn
+## A use case for Anaconda Cluster
 
 <img style="margin-left:60%;margin-top:150px;width:30%;" src="anaconda_cluster_picture.png"></img>
 
@@ -126,13 +127,14 @@ border-color: gray
  * ## Scikit-learn and scikit-image
 
 # Show how these tools work together
-# Try deployment with Anaconda cluster
+# Test deployment with Anaconda cluster
+
 
 ---
 
 <img class="logo" src="Continuum_Logo_0702.png"></img>
 
-# Image analysis example
+# Image analysis example problem
  * Try to match images with similar images seen before 
  * The end goal is to line up alike images, like this:
 
@@ -150,8 +152,8 @@ border-color: gray
 <img class="logo" src="Continuum_Logo_0702.png"></img>
 
 # Helpful links with this image analysis example
- * [github repo](https://github.com/ContinuumIO/image-analyzer/)
- * [nbviewer ipython notebook](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb)
+ * Github repo: [https://github.com/ContinuumIO/image-analyzer/](https://github.com/ContinuumIO/image-analyzer/)
+ * Nbviewer ipython notebook: [http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb)
  
 ---
 
@@ -342,29 +344,13 @@ vote_counts = grouped.reduce(count_keys)
    u'hdfs://ip-10-123-209-104:9000/imgs/malestaffobeidnobeidn.14.jpg': 33040,
    u'hdfs://ip-10-123-209-104:9000/imgs/malesvkrizsvkriz.17.jpg': 10640}))
 ```
----
-
-<img class="logo" src="Continuum_Logo_0702.png"></img>
-
-# While image-analyzer runs, monitor it in the browser with:
- * Ipython notebook: 1.2.3.4:8888
- * WebHDFS file browser: 1.2.3.4:50070
- * YARN spark cluster monitor: 1.2.3.4:9026
-#### (replace 1.2.3.4 with your head node's IP)
-
----
-<img class="logo" src="Continuum_Logo_0702.png"></img>
-
-# Inspecting results after model run
- * Use [the ipython notebook](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb#matches) to explore the results
-
-
 
 ---
 <img class="logo2" src="anaconda_cluster_logo.png"></img>
 
 # Dev-ops details
  * Used [Anaconda cluster](http://docs.continuum.io/anaconda-cluster/overview.html) to deploy PySpark cluster with scikit and numpy
+  * [http://docs.continuum.io/anaconda-cluster/overview](http://docs.continuum.io/anaconda-cluster/overview)
 
 ---
 
@@ -385,6 +371,7 @@ aws_east:
 </pre>
 </code>
 
+  * http://docs.continuum.io/anaconda-cluster/overview#provider-setup
 ---
 
 <img class="logo2" src="anaconda_cluster_logo.png"></img>
@@ -405,13 +392,15 @@ spark_profile:
     - notebook
 </code>
 </pre>
+  
+  * [http://docs.continuum.io/anaconda-cluster/overview.html#profile-setup](http://docs.continuum.io/anaconda-cluster/overview.html#profile-setup)
 
 ---
 
 <img class="logo2" src="anaconda_cluster_logo.png"></img>
 
-# Start a cluster
- * With Anaconda cluster
+# Anaconda cluster steps
+ * Start cluster
 <pre>
 <code class="bash">
     acluster create spark-cluster --profile spark_profile
@@ -423,10 +412,16 @@ spark_profile:
 
 # Working with Anaconda cluster
 
- * Push a file(s) to all the nodes of cluster
+ * Push a file to all the nodes of cluster
  <pre><code class="bash">
      acluster put some_file.py /tmp/some_file.py --target --all
  </code></pre>
+
+* Push a local directory to the head node but not others
+<pre><code class="bash">
+     acluster put ./tmp_data/ /tmp/data --target 0
+ </code></pre>
+
 
 ---
 
@@ -489,7 +484,9 @@ spark-cluster:
   \- 54.237.113.188 (head)
   \- 54.237.86.244
 </code></pre>
+
 ---
+
 <img class="logo2" src="anaconda_cluster_logo.png"></img>
 
 # Working with Anaconda cluster
@@ -513,6 +510,7 @@ spark-cluster:
   provider: aws_east
   user: ubuntu
 </code></pre>
+
 ---
 
 <img class="logo2" src="anaconda_cluster_logo.png"></img>
@@ -563,6 +561,22 @@ Cluster destroyed
 . run_helper.sh
 </code>
 </pre>
+
+---
+
+<img class="logo" src="Continuum_Logo_0702.png"></img>
+
+# While image-analyzer runs, monitor it in the browser with:
+ * Ipython notebook: 1.2.3.4:8888
+ * WebHDFS file browser: 1.2.3.4:50070
+ * YARN spark cluster monitor: 1.2.3.4:9026
+#### (replace 1.2.3.4 with your head node's IP)
+
+---
+<img class="logo" src="Continuum_Logo_0702.png"></img>
+
+# Inspecting results after model run
+ * Use [the ipython notebook](http://nbviewer.ipython.org/github/continuumio/image-analyzer/blob/master/Explore_Spark_Results.ipynb#matches) to explore the results
 
 ---
 
