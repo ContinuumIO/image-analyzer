@@ -20,7 +20,7 @@ config = yaml.load(open(config_path))
 
 # set up Spark
 conf = SparkConf()
-conf.set('spark.executor.instances', 4)
+conf.set('spark.executor.instances', 8)
 sc = SparkContext('yarn-client', 'pyspark-demo', conf=conf)
 
 # keys output in each dictionary for map_each_image.  The values are np.arrays

@@ -5,9 +5,9 @@ example_data: /imgs/
 # if not, put Null
 fuzzy_example_data: /fuzzy/
 # the wildcard input that specifies where to get hdfs images
-input_spec: /imgs/*15.jpg
+input_spec: /imgs/*0.jpg
 # a name of a set of kmeans and map_each_image measurements
-test_name: t6
+test_name: t4
 # actions: list that may include some or all of 
 #     [map_each_image, kmeans, find_similar]
 actions: [ map_each_image, kmeans, find_similar]
@@ -38,7 +38,7 @@ ward_x_down: 16
 # phash_chunk_len sets the sub-list length to
 # find tokens with the perceptive hash list of hexes.
 # Each perceptive hash should be this many bits
-phash_bits: 128
+phash_bits: 256
 # And this many of the phash N-bit hexes should
 # be combined for keys typically
 phash_chunk_len: 2
@@ -57,7 +57,7 @@ n_clusters_group: 8
 # find_similar step. (i.e. 1 hash per cluster 
 # per selection per training image joined to 
 # candidates with same.)
-ward_clusters: 8
+ward_clusters: 5
 # how many kmeans iterations in the group  kmeans of all images
 max_iter_group: 3
 # convergence in group kmeans 
@@ -106,10 +106,10 @@ candidate_batch: c4
 # where should the measurements be saved, or
 # if indicated True candidate_has_mapped above, then
 # it is assumed map_each_image has been applied to candidate batch.
-candidate_measures_spec: /t6/candidates/c4/measures
+candidate_measures_spec: /t4/candidates/c4/measures
 # Where are the candidate images in hdfs
 # this is a wildcard file spec
-candidate_spec: /fuzzy/*15.jpg
+candidate_spec: /fuzzy/*0.jpg
 # The search proceeds in rounds of 
 # searching networks of hashes.
 # How many potentially matching image
