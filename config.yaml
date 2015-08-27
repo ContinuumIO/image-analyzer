@@ -5,12 +5,12 @@ example_data: /imgs/
 # if not, put Null
 fuzzy_example_data: /fuzzy/
 # the wildcard input that specifies where to get hdfs images
-input_spec: /imgs/*
+input_spec: /imgs/*15.jpg
 # a name of a set of kmeans and map_each_image measurements
-test_name: t1
+test_name: t6
 # actions: list that may include some or all of 
 #     [map_each_image, kmeans, find_similar]
-actions: [map_each_image, kmeans, find_similar]
+actions: [ map_each_image, kmeans, find_similar]
 # If running find_similar, have the candidate images 
 # already been through map_each_image?  
 candidate_has_mapped: False
@@ -59,15 +59,15 @@ n_clusters_group: 8
 # candidates with same.)
 ward_clusters: 8
 # how many kmeans iterations in the group  kmeans of all images
-max_iter_group: 10
+max_iter_group: 3
 # convergence in group kmeans 
 # (summed pixel euclidean distance in a space where rows
 #   are histograms and individual image's centroids flattened)
 # The length of 'quantiles' below and 'n_clusters' influence this.
-kmeans_group_converge: 10000 
+kmeans_group_converge: Null 
 # quantiles to get of each color histogram.  
 # quantiles are a list of 0 to 100 based arguments to np.percentile
-quantiles: [5, 15, 25, 50,  75,  95]
+quantiles: [5, 15, 25, 50,  75, 85 ,95]
 # the reducers do some unions and counting
 # of perceptive hash and ward cluster hash chunks.
 # this sets the number of keys in total
@@ -102,14 +102,14 @@ ward_to_key: True
 # against the spark tables are being done.
 
 # a name for a set of candidate images
-candidate_batch: c1
+candidate_batch: c4
 # where should the measurements be saved, or
 # if indicated True candidate_has_mapped above, then
 # it is assumed map_each_image has been applied to candidate batch.
-candidate_measures_spec: /t1/candidates/c1/measures
+candidate_measures_spec: /t6/candidates/c4/measures
 # Where are the candidate images in hdfs
 # this is a wildcard file spec
-candidate_spec: /fuzzy/*
+candidate_spec: /fuzzy/*15.jpg
 # The search proceeds in rounds of 
 # searching networks of hashes.
 # How many potentially matching image

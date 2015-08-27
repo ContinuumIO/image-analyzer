@@ -20,7 +20,7 @@ config = yaml.load(open(config_path))
 
 # set up Spark
 conf = SparkConf()
-conf.set('spark.executor.instances', 8)
+conf.set('spark.executor.instances', 4)
 sc = SparkContext('yarn-client', 'pyspark-demo', conf=conf)
 
 # keys output in each dictionary for map_each_image.  The values are np.arrays
@@ -159,7 +159,10 @@ def kmeans(config):
     convergeDist = config['kmeans_group_converge']
     sample = data.takeSample(False, K, 1)
     kPoints = [k[1] for k in sample]
-    tempDist = 10 * convergeDist
+    if convergeDist is not None:
+        tempDist = 10 * convergeDist
+    else:
+        tempDist = 1e12
     idx = 0
     within_set_sse = []
     while tempDist > convergeDist:
@@ -173,7 +176,8 @@ def kmeans(config):
         pts_hash_union = pointStats.map(
                             lambda (x, (y, z, u, w)): (x, (y / z, u, w)
                         ))
-        tempDist = pts_hash_union.map(
+        if convergeDist is not None:
+            tempDist = pts_hash_union.map(
                 lambda (x, (y, u, w)): np.sum((kPoints[x] - y) ** 2)
             ).sum()
         newPoints = pts_hash_union.map(
